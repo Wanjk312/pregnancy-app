@@ -1037,6 +1037,9 @@
             color: var(--success);
         }
     </style>
+    <!-- Supabase 客户端库（用于云端同步） -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.47.0/dist/umd/supabase.min.js"></script>
+
 </head>
 <body>
     <!-- 顶部 -->
@@ -1218,7 +1221,45 @@
                 </div>
                 <div id="bmiResult" style="margin-top:15px;"></div>
             </div>
+            
             <div class="card">
+                <div class="card-title"><span class="emoji">☁️</span> 云端同步 <span id="syncStatusBadge" class="tag" style="margin-left:10px;background:#e0e0e0;color:#666;">未连接</span></div>
+                <p style="color:var(--text-light);font-size:13px;margin-bottom:16px;">输入相同的家庭配对码，你和家人可以实时共享孕期数据。配对码为6位数字/字母。</p>
+                
+                <div id="syncConnectedPanel" style="display:none;">
+                    <div style="background:linear-gradient(135deg,#e8f5e9,#c8e6c9);padding:14px;border-radius:12px;margin-bottom:14px;">
+                        <div style="font-weight:600;color:#2e7d32;">✅ 已连接家庭</div>
+                        <div style="font-size:13px;color:var(--text-light);margin-top:4px;">配对码：<span id="displayPairCode" style="font-weight:700;color:var(--primary);"></span></div>
+                        <div style="font-size:12px;color:var(--text-light);margin-top:2px;" id="lastSyncTime">上次同步：--</div>
+                    </div>
+                    <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                        <button class="btn btn-primary" onclick="manualSync()">🔄 立即同步</button>
+                        <button class="btn btn-secondary" onclick="disconnectSync()">🔗 断开连接</button>
+                    </div>
+                </div>
+
+                <div id="syncConnectPanel">
+                    <div class="settings-row" style="grid-template-columns:1fr 1fr auto;">
+                        <div class="form-group">
+                            <label>设置昵称</label>
+                            <input type="text" id="syncNickname" placeholder="如：妈妈 / 爸爸" maxlength="10">
+                        </div>
+                        <div class="form-group">
+                            <label>配对码（6位）</label>
+                            <input type="text" id="pairCodeInput" placeholder="输入或生成配对码" maxlength="6" style="text-transform:uppercase;">
+                        </div>
+                        <div class="form-group">
+                            <button class="btn btn-primary" onclick="connectOrCreateSync()">连接/创建</button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:10px;margin-top:10px;">
+                        <button class="btn btn-secondary" onclick="generatePairCode()">🔀 生成随机配对码</button>
+                    </div>
+                    <div id="syncMessage" style="margin-top:10px;font-size:13px;min-height:20px;"></div>
+                </div>
+            </div>
+
+<div class="card">
                 <div class="card-title"><span class="emoji">💾</span> 数据管理</div>
                 <div style="display:flex;gap:10px;flex-wrap:wrap;">
                     <button class="btn btn-secondary" onclick="exportData()">📤 导出数据</button>
@@ -1310,19 +1351,348 @@
     <div class="toast" id="toast"></div>
 
     <script>
-        // ========== 数据管理 ==========
-        let appData = {
-            lmpDate: null,      // 末次月经日期
-            eddDate: null,      // 预产期
-            height: null,
-            preWeight: null,
-            checkups: [],       // 产检记录
-            kickSessions: [],   // 胎动记录
-            weights: [],        // 体重记录
-            deliveryBag: {},    // 待产包勾选状态
-            currentKickCount: 0,
-            kickStartTime: null
+// ========== Supabase 配置 ==========
+const SUPABASE_URL = 'https://gbpqqslbrrfoxnpvzmng.supabase.co';
+const SUPABASE_KEY = 'sb_publishable_QbWzDtodFLllKhZsBsvykA_qZipAfuy';
+let supabase = null;
+try {
+    if (typeof window !== 'undefined' && window.supabase && window.supabase.createClient) {
+        supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+    }
+} catch (e) {
+    console.warn('Supabase init failed:', e);
+}
+
+// ========== 数据管理 ==========
+let appData = {
+    lmpDate: null,
+    eddDate: null,
+    height: null,
+    preWeight: null,
+    currentWeight: null,
+    checkups: [],
+    kickSessions: [],
+    weights: [],
+    deliveryBag: {},
+    currentKickCount: 0,
+    kickStartTime: null,
+    sync: {
+        enabled: false,
+        pairCode: null,
+        nickname: null,
+        lastSyncAt: null,
+        familyId: null
+    }
+};
+
+let isSyncing = false;
+let syncPullTimer = null;
+
+function loadData() {
+    const saved = localStorage.getItem('pregnancyData');
+    if (saved) {
+        try {
+            const parsed = JSON.parse(saved);
+            appData = { ...appData, ...parsed };
+            if (!appData.sync) appData.sync = { enabled: false, pairCode: null, nickname: null, lastSyncAt: null, familyId: null };
+        } catch (e) {
+            console.error('loadData error', e);
+        }
+    }
+}
+
+function saveData(skipSync = false) {
+    localStorage.setItem('pregnancyData', JSON.stringify(appData));
+    if (!skipSync && appData.sync && appData.sync.enabled && supabase) {
+        debouncedSyncToCloud();
+    }
+}
+
+// 防抖同步，避免频繁操作
+let syncTimeout = null;
+function debouncedSyncToCloud() {
+    if (syncTimeout) clearTimeout(syncTimeout);
+    syncTimeout = setTimeout(() => syncToCloud(), 1500);
+}
+
+// 生成随机配对码
+function generatePairCode() {
+    const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    let code = '';
+    for (let i = 0; i < 6; i++) {
+        code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    document.getElementById('pairCodeInput').value = code;
+    showSyncMessage('已生成配对码：' + code, 'success');
+}
+
+function normalizePairCode(code) {
+    return code.trim().toUpperCase().replace(/[^A-Z0-9]/g, '').substring(0, 6);
+}
+
+function showSyncMessage(msg, type) {
+    const el = document.getElementById('syncMessage');
+    if (!el) return;
+    el.textContent = msg;
+    el.style.color = type === 'error' ? 'var(--danger)' : type === 'success' ? 'var(--success)' : 'var(--text-light)';
+    if (msg) setTimeout(() => { if (el.textContent === msg) el.textContent = ''; }, 4000);
+}
+
+async function connectOrCreateSync() {
+    if (!supabase) {
+        showSyncMessage('同步服务初始化失败，请刷新页面重试', 'error');
+        return;
+    }
+    const nickname = document.getElementById('syncNickname').value.trim() || '用户';
+    let pairCode = normalizePairCode(document.getElementById('pairCodeInput').value);
+    if (pairCode.length !== 6) {
+        showSyncMessage('请输入6位配对码', 'error');
+        return;
+    }
+
+    showSyncMessage('正在连接...', '');
+    try {
+        // 查询是否已存在该家庭
+        let { data: families, error: fetchError } = await supabase
+            .from('families')
+            .select('*')
+            .eq('pair_code', pairCode);
+
+        if (fetchError) throw fetchError;
+
+        let familyId;
+        let isNew = false;
+        if (!families || families.length === 0) {
+            // 创建新家庭
+            const { data: newFamily, error: createError } = await supabase
+                .from('families')
+                .insert([{ pair_code: pairCode, name: nickname + '的家庭' }])
+                .select()
+                .single();
+            if (createError) throw createError;
+            familyId = newFamily.id;
+            isNew = true;
+            showSyncMessage('已创建新家庭，配对码：' + pairCode, 'success');
+        } else {
+            familyId = families[0].id;
+            showSyncMessage('已加入家庭：' + pairCode, 'success');
+        }
+
+        appData.sync = {
+            enabled: true,
+            pairCode: pairCode,
+            nickname: nickname,
+            familyId: familyId,
+            lastSyncAt: Date.now()
         };
+        saveData(true);
+
+        // 首次同步：先推本地数据，再拉云端数据
+        await syncToCloud();
+        await pullFromCloud();
+
+        renderSyncPanel();
+        showToast(isNew ? '家庭创建成功' : '加入家庭成功', 'success');
+    } catch (err) {
+        console.error('connect sync error', err);
+        showSyncMessage('连接失败：' + (err.message || '未知错误'), 'error');
+    }
+}
+
+function disconnectSync() {
+    if (!confirm('断开同步后，本地数据保留，但不再与云端同步。确定断开？')) return;
+    appData.sync = { enabled: false, pairCode: null, nickname: null, lastSyncAt: null, familyId: null };
+    saveData(true);
+    if (syncPullTimer) clearInterval(syncPullTimer);
+    renderSyncPanel();
+    showToast('已断开同步', 'success');
+}
+
+function renderSyncPanel() {
+    const sync = appData.sync || {};
+    const badge = document.getElementById('syncStatusBadge');
+    const connectedPanel = document.getElementById('syncConnectedPanel');
+    const connectPanel = document.getElementById('syncConnectPanel');
+    const displayCode = document.getElementById('displayPairCode');
+    const lastSync = document.getElementById('lastSyncTime');
+
+    if (!badge || !connectedPanel || !connectPanel) return;
+
+    if (sync.enabled && sync.pairCode) {
+        badge.textContent = '已连接';
+        badge.style.background = 'var(--success)';
+        badge.style.color = 'white';
+        connectedPanel.style.display = 'block';
+        connectPanel.style.display = 'none';
+        displayCode.textContent = sync.pairCode;
+        lastSync.textContent = sync.lastSyncAt ? '上次同步：' + new Date(sync.lastSyncAt).toLocaleString('zh-CN') : '上次同步：--';
+        startAutoPull();
+    } else {
+        badge.textContent = '未连接';
+        badge.style.background = '#e0e0e0';
+        badge.style.color = '#666';
+        connectedPanel.style.display = 'none';
+        connectPanel.style.display = 'block';
+        if (syncPullTimer) clearInterval(syncPullTimer);
+    }
+}
+
+async function syncToCloud() {
+    if (!supabase || !appData.sync || !appData.sync.enabled || isSyncing) return;
+    isSyncing = true;
+    try {
+        const payload = {
+            pair_code: appData.sync.pairCode,
+            family_id: appData.sync.familyId,
+            data: {
+                lmpDate: appData.lmpDate,
+                eddDate: appData.eddDate,
+                height: appData.height,
+                preWeight: appData.preWeight,
+                currentWeight: appData.currentWeight,
+                checkups: appData.checkups,
+                kickSessions: appData.kickSessions,
+                weights: appData.weights,
+                deliveryBag: appData.deliveryBag,
+                currentKickCount: appData.currentKickCount,
+                kickStartTime: appData.kickStartTime
+            },
+            updated_by: appData.sync.nickname
+        };
+
+        // upsert：如果不存在则插入，存在则更新
+        const { error } = await supabase
+            .from('pregnancy_data')
+            .upsert(payload, { onConflict: 'pair_code' });
+
+        if (error) throw error;
+
+        appData.sync.lastSyncAt = Date.now();
+        localStorage.setItem('pregnancyData', JSON.stringify(appData));
+        renderSyncPanel();
+        console.log('已同步到云端');
+    } catch (err) {
+        console.error('syncToCloud error', err);
+    } finally {
+        isSyncing = false;
+    }
+}
+
+async function pullFromCloud() {
+    if (!supabase || !appData.sync || !appData.sync.enabled || isSyncing) return false;
+    isSyncing = true;
+    try {
+        const { data, error } = await supabase
+            .from('pregnancy_data')
+            .select('*')
+            .eq('pair_code', appData.sync.pairCode)
+            .single();
+
+        if (error) {
+            if (error.code === 'PGRST116') {
+                // 云端无数据，首次使用
+                isSyncing = false;
+                return false;
+            }
+            throw error;
+        }
+
+        if (!data || !data.data) {
+            isSyncing = false;
+            return false;
+        }
+
+        const cloudData = data.data;
+        const cloudUpdatedAt = new Date(data.updated_at).getTime();
+        const localUpdatedAt = appData.sync.lastSyncAt || 0;
+
+        // 简单冲突策略：云端更新时间与本地比较，取最新
+        // 实际上我们以云端数据为准进行合并，因为每个用户都是最新输入
+        // 更安全的方式：合并数组（去重），标量取最新的
+        mergeCloudData(cloudData);
+
+        appData.sync.lastSyncAt = Date.now();
+        appData.sync.familyId = data.family_id;
+        localStorage.setItem('pregnancyData', JSON.stringify(appData));
+        renderSyncPanel();
+
+        // 刷新页面展示
+        renderOverview();
+        renderBaby();
+        renderCheckup();
+        renderKick();
+        renderWeight();
+        renderDelivery();
+
+        console.log('已从云端拉取数据');
+        isSyncing = false;
+        return true;
+    } catch (err) {
+        console.error('pullFromCloud error', err);
+        isSyncing = false;
+        return false;
+    }
+}
+
+function mergeCloudData(cloudData) {
+    // 标量字段：如果云端有值则覆盖
+    if (cloudData.lmpDate) appData.lmpDate = cloudData.lmpDate;
+    if (cloudData.eddDate) appData.eddDate = cloudData.eddDate;
+    if (cloudData.height) appData.height = cloudData.height;
+    if (cloudData.preWeight) appData.preWeight = cloudData.preWeight;
+    if (cloudData.currentWeight) appData.currentWeight = cloudData.currentWeight;
+    if (typeof cloudData.currentKickCount === 'number') appData.currentKickCount = cloudData.currentKickCount;
+    if (cloudData.kickStartTime) appData.kickStartTime = cloudData.kickStartTime;
+
+    // 数组字段：按 id 去重合并
+    appData.checkups = mergeArrays(appData.checkups || [], cloudData.checkups || [], 'id');
+    appData.kickSessions = mergeArrays(appData.kickSessions || [], cloudData.kickSessions || [], c => c.date + c.time);
+    appData.weights = mergeArrays(appData.weights || [], cloudData.weights || [], 'date');
+
+    // 对象字段：合并 deliveryBag
+    if (cloudData.deliveryBag) {
+        appData.deliveryBag = { ...(appData.deliveryBag || {}), ...cloudData.deliveryBag };
+    }
+}
+
+function mergeArrays(localArr, cloudArr, keyFn) {
+    const getKey = typeof keyFn === 'function' ? keyFn : item => item[keyFn];
+    const map = new Map();
+    for (const item of localArr) {
+        map.set(getKey(item), item);
+    }
+    for (const item of cloudArr) {
+        const key = getKey(item);
+        if (!map.has(key)) {
+            map.set(key, item);
+        }
+    }
+    return Array.from(map.values());
+}
+
+async function manualSync() {
+    showSyncMessage('正在同步...', '');
+    await syncToCloud();
+    const pulled = await pullFromCloud();
+    showSyncMessage(pulled ? '同步完成' : '已推送到云端', 'success');
+}
+
+function startAutoPull() {
+    if (syncPullTimer) clearInterval(syncPullTimer);
+    // 每 15 秒自动拉取一次云端数据
+    syncPullTimer = setInterval(() => {
+        if (!document.hidden) pullFromCloud();
+    }, 15000);
+}
+
+// 页面加载时，如果已启用同步，自动拉取一次
+function initSync() {
+    renderSyncPanel();
+    if (appData.sync && appData.sync.enabled && supabase) {
+        pullFromCloud();
+        startAutoPull();
+    }
+}
 
         // 待产包清单数据
         const deliveryBagList = {
@@ -1842,13 +2212,17 @@
         function loadData() {
             const saved = localStorage.getItem('pregnancyData');
             if (saved) {
-                appData = { ...appData, ...JSON.parse(saved) };
+                try {
+                    const parsed = JSON.parse(saved);
+                    appData = { ...appData, ...parsed };
+                    if (!appData.sync) appData.sync = { enabled: false, pairCode: null, nickname: null, lastSyncAt: null, familyId: null };
+                } catch (e) {
+                    console.error('loadData error', e);
+                }
             }
         }
 
-        function saveData() {
-            localStorage.setItem('pregnancyData', JSON.stringify(appData));
-        }
+        // saveData 已在同步模块中定义
 
         // ========== 孕周计算 ==========
         function calculateWeek() {
@@ -2631,6 +3005,7 @@
         // ========== 设置 ==========
         function renderSettings() {
             document.getElementById('lmpDate').value = appData.lmpDate || '';
+            renderSyncPanel();
             document.getElementById('eddDate').value = appData.eddDate || (appData.lmpDate ? calculateEDD() : '');
             document.getElementById('height').value = appData.height || '';
             document.getElementById('preWeight').value = appData.preWeight || '';
@@ -2770,6 +3145,7 @@
         loadData();
         renderOverview();
         renderSettings();
+        initSync();
     </script>
 </body>
 </html>
