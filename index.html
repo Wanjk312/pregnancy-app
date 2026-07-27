@@ -75,6 +75,30 @@
             display: flex;
             align-items: center;
             gap: 8px;
+            cursor: pointer;
+            padding: 4px 8px;
+            border-radius: 8px;
+            transition: background 0.2s;
+        }
+
+        .header h1:hover {
+            background: rgba(255,255,255,0.15);
+        }
+
+        .header h1.editing {
+            background: rgba(255,255,255,0.25);
+        }
+
+        .header h1 input {
+            background: transparent;
+            border: none;
+            color: white;
+            font-size: 24px;
+            font-weight: 700;
+            font-family: inherit;
+            width: 220px;
+            outline: none;
+            padding: 0;
         }
 
         .header h1 .icon {
@@ -843,6 +867,10 @@
             .header h1 {
                 font-size: 18px;
             }
+            .header h1 input {
+                font-size: 18px;
+                width: 170px;
+            }
             .header-info {
                 font-size: 12px;
                 flex-direction: column;
@@ -1045,7 +1073,7 @@
     <!-- 顶部 -->
     <div class="header">
         <div class="header-container">
-            <h1><span class="icon">🤰</span> 孕期专属管理工作台</h1>
+            <h1 onclick="editHeaderTitle(this)"><span class="icon">🤰</span><span id="headerTitleText">孕期专属管理工作台</span></h1>
             <div class="header-info" id="headerInfo">
                 <span>📅 <span id="headerDate"></span></span>
                 <span>Week <span id="headerWeek">--</span></span>
@@ -1365,24 +1393,25 @@ try {
 
 // ========== 数据管理 ==========
 let appData = {
-    lmpDate: null,
-    eddDate: null,
-    height: null,
-    preWeight: null,
-    currentWeight: null,
-    checkups: [],
-    kickSessions: [],
-    weights: [],
-    deliveryBag: {},
-    currentKickCount: 0,
-    kickStartTime: null,
-    sync: {
-        enabled: false,
-        pairCode: null,
-        nickname: null,
-        lastSyncAt: null,
-        familyId: null
-    }
+            lmpDate: null,
+            eddDate: null,
+            height: null,
+            preWeight: null,
+            currentWeight: null,
+            checkups: [],
+            kickSessions: [],
+            weights: [],
+            deliveryBag: {},
+            currentKickCount: 0,
+            kickStartTime: null,
+            sync: {
+                enabled: false,
+                pairCode: null,
+                nickname: null,
+                lastSyncAt: null,
+                familyId: null
+            },
+            appTitle: '孕期专属管理工作台'
 };
 
 let isSyncing = false;
@@ -1555,7 +1584,8 @@ async function syncToCloud() {
                 weights: appData.weights,
                 deliveryBag: appData.deliveryBag,
                 currentKickCount: appData.currentKickCount,
-                kickStartTime: appData.kickStartTime
+                kickStartTime: appData.kickStartTime,
+                appTitle: appData.appTitle
             },
             updated_by: appData.sync.nickname
         };
@@ -1636,6 +1666,7 @@ async function pullFromCloud() {
 
 function mergeCloudData(cloudData) {
     // 标量字段：如果云端有值则覆盖
+    if (cloudData.appTitle) appData.appTitle = cloudData.appTitle;
     if (cloudData.lmpDate) appData.lmpDate = cloudData.lmpDate;
     if (cloudData.eddDate) appData.eddDate = cloudData.eddDate;
     if (cloudData.height) appData.height = cloudData.height;
@@ -3106,6 +3137,45 @@ function initSync() {
         }
 
         // ========== 工具函数 ==========
+        function editHeaderTitle(h1) {
+            const textSpan = document.getElementById('headerTitleText');
+            const currentTitle = appData.appTitle || '孕期专属管理工作台';
+            h1.classList.add('editing');
+            h1.innerHTML = '<span class="icon">🤰</span><input type="text" id="headerTitleInput" value="' + currentTitle.replace(/"/g, '&quot;') + '" maxlength="20">';
+            const input = document.getElementById('headerTitleInput');
+            input.focus();
+            input.select();
+
+            function saveTitle() {
+                const newTitle = input.value.trim();
+                if (newTitle) {
+                    appData.appTitle = newTitle;
+                    saveData();
+                }
+                updateHeaderTitle();
+                h1.classList.remove('editing');
+            }
+
+            input.addEventListener('blur', saveTitle);
+            input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    input.blur();
+                } else if (e.key === 'Escape') {
+                    updateHeaderTitle();
+                    h1.classList.remove('editing');
+                }
+            });
+        }
+
+        function updateHeaderTitle() {
+            const h1 = document.querySelector('.header h1');
+            const title = appData.appTitle || '孕期专属管理工作台';
+            document.title = title;
+            if (h1 && !h1.classList.contains('editing')) {
+                h1.innerHTML = '<span class="icon">🤰</span><span id="headerTitleText">' + title.replace(/</g, '&lt;').replace(/>/g, '&gt;') + '</span>';
+            }
+        }
+
         function closeModal(id) {
             document.getElementById(id).classList.remove('active');
         }
@@ -3143,6 +3213,7 @@ function initSync() {
 
         // ========== 启动 ==========
         loadData();
+        updateHeaderTitle();
         renderOverview();
         renderSettings();
         initSync();
