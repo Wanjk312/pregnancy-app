@@ -1717,8 +1717,7 @@ function mergeCloudData(cloudData) {
     }
 
     // 更新顶部标题
-    const titleEl = document.getElementById('headerTitle');
-    if (titleEl && appData.appTitle) titleEl.textContent = appData.appTitle;
+    updateHeaderTitle();
 }
 
 function mergeArrays(localArr, cloudArr, keyFn) {
