@@ -1,0 +1,2775 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>孕期专属管理工作台</title>
+
+    <!-- iOS 主屏幕应用配置：全屏显示、隐藏浏览器UI -->
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="孕期管理">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="theme-color" content="#e91e63">
+
+    <!-- 自定义主屏幕图标（粉色孕妇剪影） -->
+    <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg%20xmlns='http://www.w3.org/2000/svg'%20width='180'%20height='180'%20viewBox='0%200%20180%20180'%3E%3Crect%20width='180'%20height='180'%20rx='40'%20fill='%23e91e63'/%3E%3Ccircle%20cx='90'%20cy='50'%20r='16'%20fill='white'/%3E%3Cpath%20d='M90%2072%20C72%2072%2062%2085%2062%20105%20L62%20145%20L118%20145%20L118%20105%20C118%2085%20108%2072%2090%2072Z'%20fill='white'/%3E%3Ccircle%20cx='90'%20cy='100'%20r='20'%20fill='%23fce4ec'/%3E%3C/svg%3E">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #e91e63;
+            --primary-light: #f8bbd0;
+            --primary-dark: #ad1457;
+            --secondary: #fce4ec;
+            --accent: #ff80ab;
+            --bg: #fff5f8;
+            --card-bg: #ffffff;
+            --text: #3d3d3d;
+            --text-light: #7a7a7a;
+            --success: #4caf50;
+            --warning: #ff9800;
+            --danger: #f44336;
+            --shadow: 0 4px 20px rgba(233, 30, 99, 0.08);
+            --shadow-hover: 0 8px 30px rgba(233, 30, 99, 0.15);
+            --radius: 16px;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            background: linear-gradient(135deg, #fff5f8 0%, #fce4ec 100%);
+            color: var(--text);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        /* 顶部导航 */
+        .header {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            padding: 20px 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: 0 2px 15px rgba(233, 30, 99, 0.3);
+        }
+
+        .header-container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .header h1 {
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .header h1 .icon {
+            font-size: 28px;
+        }
+
+        .header-info {
+            display: flex;
+            gap: 15px;
+            font-size: 14px;
+            opacity: 0.95;
+        }
+
+        .header-info span {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        /* 导航栏 */
+        .nav-tabs {
+            background: white;
+            display: flex;
+            overflow-x: auto;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            position: sticky;
+            top: 65px;
+            z-index: 99;
+        }
+
+        .nav-tab {
+            padding: 14px 20px;
+            white-space: nowrap;
+            cursor: pointer;
+            color: var(--text-light);
+            font-size: 14px;
+            font-weight: 500;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .nav-tab:hover {
+            color: var(--primary);
+            background: var(--secondary);
+        }
+
+        .nav-tab.active {
+            color: var(--primary);
+            border-bottom-color: var(--primary);
+            font-weight: 600;
+        }
+
+        /* 主容器 */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 卡片 */
+        .card {
+            background: var(--card-bg);
+            border-radius: var(--radius);
+            padding: 24px;
+            box-shadow: var(--shadow);
+            margin-bottom: 20px;
+            transition: box-shadow 0.3s;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-hover);
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card-title .emoji {
+            font-size: 22px;
+        }
+
+        /* 进度条 */
+        .progress-container {
+            margin: 20px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 24px;
+            background: var(--secondary);
+            border-radius: 12px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary-light), var(--primary));
+            border-radius: 12px;
+            transition: width 0.8s ease;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            padding-right: 10px;
+            color: white;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        /* 孕周信息展示 */
+        .week-display {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .info-box {
+            background: linear-gradient(135deg, var(--secondary), #fff);
+            border-radius: 12px;
+            padding: 20px;
+            text-align: center;
+            border: 2px solid var(--primary-light);
+        }
+
+        .info-box .label {
+            font-size: 13px;
+            color: var(--text-light);
+            margin-bottom: 6px;
+        }
+
+        .info-box .value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--primary);
+        }
+
+        .info-box .unit {
+            font-size: 14px;
+            color: var(--text-light);
+        }
+
+        /* 表单 */
+        .form-group {
+            margin-bottom: 16px;
+        }
+
+        .form-group label {
+            display: block;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 6px;
+            color: var(--text);
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            width: 100%;
+            padding: 10px 14px;
+            border: 2px solid #e0e0e0;
+            border-radius: 10px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+            font-family: inherit;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: var(--primary);
+        }
+
+        .form-group textarea {
+            resize: vertical;
+            min-height: 80px;
+        }
+
+        /* 按钮 */
+        .btn {
+            padding: 10px 24px;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-family: inherit;
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-dark);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(233, 30, 99, 0.3);
+        }
+
+        .btn-secondary {
+            background: var(--secondary);
+            color: var(--primary-dark);
+        }
+
+        .btn-secondary:hover {
+            background: var(--primary-light);
+        }
+
+        .btn-danger {
+            background: var(--danger);
+            color: white;
+        }
+
+        .btn-sm {
+            padding: 6px 14px;
+            font-size: 12px;
+        }
+
+        /* 设置区域 */
+        .settings-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr auto;
+            gap: 15px;
+            align-items: end;
+        }
+
+        /* 宝宝发育展示 */
+        .baby-development {
+            display: grid;
+            grid-template-columns: 200px 1fr;
+            gap: 30px;
+            align-items: center;
+        }
+
+        .baby-visual {
+            text-align: center;
+            background: linear-gradient(135deg, #fff9c4, #fff3e0);
+            border-radius: 50%;
+            width: 200px;
+            height: 200px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid var(--primary-light);
+            margin: 0 auto;
+        }
+
+        .baby-visual .baby-emoji {
+            font-size: 60px;
+        }
+
+        .baby-visual .baby-size {
+            font-size: 14px;
+            color: var(--text-light);
+            margin-top: 8px;
+        }
+
+        .baby-info-list {
+            list-style: none;
+        }
+
+        .baby-info-list li {
+            padding: 10px 0;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: start;
+            gap: 8px;
+        }
+
+        .baby-info-list li:last-child {
+            border-bottom: none;
+        }
+
+        .baby-info-list .bullet {
+            color: var(--primary);
+            font-weight: bold;
+            flex-shrink: 0;
+        }
+
+        /* 产检记录 */
+        .record-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            border-left: 4px solid var(--primary);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+        }
+
+        .record-item .record-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 8px;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .record-item .record-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--text);
+        }
+
+        .record-item .record-date {
+            font-size: 13px;
+            color: var(--text-light);
+        }
+
+        .record-item .record-content {
+            font-size: 14px;
+            color: var(--text);
+            margin: 8px 0;
+        }
+
+        .record-images {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .record-images img {
+            width: 80px;
+            height: 80px;
+            object-fit: cover;
+            border-radius: 8px;
+            cursor: pointer;
+            border: 2px solid var(--primary-light);
+            transition: transform 0.3s;
+        }
+
+        .record-images img:hover {
+            transform: scale(1.1);
+        }
+
+        /* 危险情况卡片 */
+        .danger-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            margin-bottom: 15px;
+            border: 1px solid #ffe0e0;
+            box-shadow: 0 2px 10px rgba(244, 67, 54, 0.08);
+        }
+
+        .danger-card-header {
+            background: linear-gradient(135deg, #ffcdd2, #ef9a9a);
+            padding: 14px 20px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            cursor: pointer;
+        }
+
+        .danger-card-header .danger-title {
+            font-weight: 600;
+            color: #b71c1c;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 16px;
+        }
+
+        .danger-card-header .toggle {
+            font-size: 18px;
+            color: #b71c1c;
+            transition: transform 0.3s;
+        }
+
+        .danger-card.expanded .toggle {
+            transform: rotate(180deg);
+        }
+
+        .danger-card-body {
+            padding: 0;
+            max-height: 0;
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .danger-card.expanded .danger-card-body {
+            padding: 16px 20px;
+            max-height: 500px;
+        }
+
+        .danger-card-body .section-label {
+            font-weight: 600;
+            color: var(--danger);
+            font-size: 14px;
+            margin-top: 10px;
+            margin-bottom: 4px;
+        }
+
+        .danger-card-body .section-label:first-child {
+            margin-top: 0;
+        }
+
+        .danger-card-body p {
+            font-size: 14px;
+            line-height: 1.7;
+        }
+
+        /* 待产包清单 */
+        .checklist-category {
+            margin-bottom: 20px;
+        }
+
+        .checklist-category-title {
+            font-weight: 600;
+            font-size: 16px;
+            color: var(--primary-dark);
+            margin-bottom: 10px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .checklist-item {
+            display: flex;
+            align-items: center;
+            padding: 10px 14px;
+            background: white;
+            border-radius: 8px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            border: 1px solid #f0f0f0;
+        }
+
+        .checklist-item:hover {
+            background: var(--secondary);
+        }
+
+        .checklist-item input[type="checkbox"] {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            accent-color: var(--primary);
+            cursor: pointer;
+        }
+
+        .checklist-item label {
+            flex: 1;
+            cursor: pointer;
+            font-size: 14px;
+        }
+
+        .checklist-item.checked label {
+            text-decoration: line-through;
+            color: var(--text-light);
+        }
+
+        .checklist-item .item-note {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-left: 8px;
+        }
+
+        /* 模态框 */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1000;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .modal-overlay.active {
+            display: flex;
+        }
+
+        .modal {
+            background: white;
+            border-radius: 16px;
+            padding: 24px;
+            max-width: 500px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            animation: modalIn 0.3s ease;
+        }
+
+        @keyframes modalIn {
+            from { transform: scale(0.9); opacity: 0; }
+            to { transform: scale(1); opacity: 1; }
+        }
+
+        .modal-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--primary-dark);
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-close {
+            cursor: pointer;
+            font-size: 24px;
+            color: var(--text-light);
+            background: none;
+            border: none;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .modal-close:hover {
+            color: var(--primary);
+        }
+
+        /* 图片预览 */
+        .image-preview-container {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+
+        .image-preview {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .image-preview img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid var(--primary-light);
+        }
+
+        .image-preview .remove-img {
+            position: absolute;
+            top: -6px;
+            right: -6px;
+            background: var(--danger);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 22px;
+            height: 22px;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 图片大图查看 */
+        .image-viewer {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .image-viewer.active {
+            display: flex;
+        }
+
+        .image-viewer img {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 8px;
+        }
+
+        /* 提示消息 */
+        .toast {
+            position: fixed;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%) translateY(100px);
+            background: var(--text);
+            color: white;
+            padding: 12px 28px;
+            border-radius: 24px;
+            font-size: 14px;
+            z-index: 3000;
+            transition: transform 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
+
+        .toast.show {
+            transform: translateX(-50%) translateY(0);
+        }
+
+        .toast.success {
+            background: var(--success);
+        }
+
+        .toast.error {
+            background: var(--danger);
+        }
+
+        /* 分娩注意事项 */
+        .delivery-tip {
+            display: flex;
+            gap: 12px;
+            padding: 14px;
+            background: linear-gradient(135deg, #f3e5f5, #fff);
+            border-radius: 10px;
+            margin-bottom: 10px;
+            border-left: 4px solid #9c27b0;
+        }
+
+        .delivery-tip .tip-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .delivery-tip .tip-content {
+            font-size: 14px;
+        }
+
+        .delivery-tip .tip-content strong {
+            color: #7b1fa2;
+        }
+
+        /* 三阶段标志 */
+        .trimester-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+        }
+
+        .trimester-1 {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .trimester-2 {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .trimester-3 {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        /* 空状态 */
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: var(--text-light);
+        }
+
+        .empty-state .emoji {
+            font-size: 48px;
+            margin-bottom: 12px;
+        }
+
+        /* 胎动记录 */
+        .kick-counter {
+            text-align: center;
+            padding: 20px;
+        }
+
+        .kick-count-display {
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 10px 0;
+        }
+
+        .kick-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--primary-dark));
+            color: white;
+            border: none;
+            font-size: 18px;
+            font-weight: 600;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(233, 30, 99, 0.4);
+            transition: all 0.2s;
+            margin: 15px 0;
+        }
+
+        .kick-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 体重图表 */
+        .weight-chart {
+            width: 100%;
+            height: 250px;
+            margin: 15px 0;
+        }
+
+        /* 标签 */
+        .tag {
+            display: inline-block;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        .tag-normal {
+            background: #c8e6c9;
+            color: #2e7d32;
+        }
+
+        .tag-attention {
+            background: #fff9c4;
+            color: #f57f17;
+        }
+
+        .tag-important {
+            background: #ffcdd2;
+            color: #c62828;
+        }
+
+        /* 响应式 */
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 18px;
+            }
+            .header-info {
+                font-size: 12px;
+                flex-direction: column;
+                gap: 4px;
+            }
+            .settings-row {
+                grid-template-columns: 1fr;
+            }
+            .baby-development {
+                grid-template-columns: 1fr;
+                text-align: center;
+            }
+            .card {
+                padding: 16px;
+            }
+            .nav-tab {
+                padding: 12px 14px;
+                font-size: 13px;
+            }
+            .info-box .value {
+                font-size: 22px;
+            }
+        }
+
+        /* 滚动条 */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: var(--secondary);
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: var(--primary-light);
+            border-radius: 3px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--primary);
+        }
+
+        /* 产检项目参考 */
+        .checkup-schedule-item {
+            display: flex;
+            align-items: start;
+            gap: 12px;
+            padding: 12px;
+            border-radius: 10px;
+            margin-bottom: 8px;
+            transition: background 0.2s;
+        }
+
+        .checkup-schedule-item:hover {
+            background: var(--secondary);
+        }
+
+        .checkup-schedule-item .week-tag {
+            background: var(--primary);
+            color: white;
+            padding: 4px 10px;
+            border-radius: 8px;
+            font-size: 13px;
+            font-weight: 600;
+            flex-shrink: 0;
+            min-width: 70px;
+            text-align: center;
+        }
+
+        .checkup-schedule-item.done .week-tag {
+            background: var(--success);
+        }
+
+        .checkup-schedule-item .checkup-content {
+            font-size: 14px;
+        }
+
+        .checkup-schedule-item .checkup-content strong {
+            display: block;
+            margin-bottom: 2px;
+        }
+
+        .checkup-schedule-item .status-tag {
+            font-size: 12px;
+            margin-top: 4px;
+        }
+
+        /* 医院定位与联想输入 */
+        .hospital-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .hospital-input-wrapper input {
+            width: 100%;
+            padding-right: 44px;
+        }
+
+        .hospital-input-wrapper .location-btn {
+            position: absolute;
+            right: 4px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 36px;
+            height: 36px;
+            border: none;
+            border-radius: 8px;
+            background: var(--secondary);
+            color: var(--primary);
+            font-size: 18px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.2s;
+        }
+
+        .hospital-input-wrapper .location-btn:active {
+            background: var(--primary-light);
+            transform: translateY(-50%) scale(0.95);
+        }
+
+        .hospital-suggestions {
+            background: white;
+            border: 1px solid var(--primary-light);
+            border-radius: 10px;
+            max-height: 220px;
+            overflow-y: auto;
+            box-shadow: var(--shadow);
+            margin-top: 6px;
+            z-index: 50;
+            display: none;
+        }
+
+        .hospital-suggestions.active {
+            display: block;
+        }
+
+        .hospital-suggestion-item {
+            padding: 12px 14px;
+            cursor: pointer;
+            font-size: 14px;
+            border-bottom: 1px solid #f5f5f5;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .hospital-suggestion-item:last-child {
+            border-bottom: none;
+        }
+
+        .hospital-suggestion-item:hover,
+        .hospital-suggestion-item.active {
+            background: var(--secondary);
+        }
+
+        .hospital-suggestion-item .sugg-icon {
+            font-size: 16px;
+            flex-shrink: 0;
+        }
+
+        .hospital-suggestion-item .sugg-text {
+            flex: 1;
+        }
+
+        .hospital-suggestion-item .sugg-tag {
+            font-size: 11px;
+            color: var(--text-light);
+            background: #f5f5f5;
+            padding: 2px 8px;
+            border-radius: 10px;
+        }
+
+        .location-status {
+            font-size: 12px;
+            color: var(--text-light);
+            margin-top: 6px;
+            min-height: 18px;
+        }
+
+        .location-status.loading {
+            color: var(--primary);
+        }
+
+        .location-status.error {
+            color: var(--danger);
+        }
+
+        .location-status.success {
+            color: var(--success);
+        }
+    </style>
+</head>
+<body>
+    <!-- 顶部 -->
+    <div class="header">
+        <div class="header-container">
+            <h1><span class="icon">🤰</span> 孕期专属管理工作台</h1>
+            <div class="header-info" id="headerInfo">
+                <span>📅 <span id="headerDate"></span></span>
+                <span>Week <span id="headerWeek">--</span></span>
+            </div>
+        </div>
+    </div>
+
+    <!-- 导航栏 -->
+    <div class="nav-tabs" id="navTabs">
+        <div class="nav-tab active" data-tab="overview">📊 总览</div>
+        <div class="nav-tab" data-tab="baby">👶 宝宝发育</div>
+        <div class="nav-tab" data-tab="checkup">🏥 产检记录</div>
+        <div class="nav-tab" data-tab="danger">⚠️ 危险情况</div>
+        <div class="nav-tab" data-tab="delivery">🏥 分娩准备</div>
+        <div class="nav-tab" data-tab="kick">🦶 胎动记录</div>
+        <div class="nav-tab" data-tab="weight">⚖️ 体重管理</div>
+        <div class="nav-tab" data-tab="settings">⚙️ 设置</div>
+    </div>
+
+    <div class="container">
+        <!-- 总览 -->
+        <div class="tab-content active" id="tab-overview">
+            <div class="card">
+                <div class="card-title"><span class="emoji">📋</span> 孕期概况</div>
+                <div id="overviewContent">
+                    <div class="empty-state">
+                        <div class="emoji">📅</div>
+                        <p>请先在「设置」中填写末次月经日期，开始记录您的孕期旅程</p>
+                    </div>
+                </div>
+            </div>
+            <div class="card" id="quickTipsCard" style="display:none;">
+                <div class="card-title"><span class="emoji">💡</span> 本周温馨提示</div>
+                <div id="quickTips"></div>
+            </div>
+            <div class="card" id="recentCheckupCard" style="display:none;">
+                <div class="card-title"><span class="emoji">📋</span> 近期产检提醒</div>
+                <div id="recentCheckup"></div>
+            </div>
+        </div>
+
+        <!-- 宝宝发育 -->
+        <div class="tab-content" id="tab-baby">
+            <div class="card" id="babyDevelopmentCard">
+                <div class="empty-state">
+                    <div class="emoji">👶</div>
+                    <p>请先在「设置」中设置末次月经日期</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">📖</span> 孕期注意事项</div>
+                <div id="precautions"></div>
+            </div>
+        </div>
+
+        <!-- 产检记录 -->
+        <div class="tab-content" id="tab-checkup">
+            <div class="card">
+                <div class="card-title">
+                    <span class="emoji">🏥</span> 产检记录
+                    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openCheckupModal()">+ 添加记录</button>
+                </div>
+                <div id="checkupList"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">📅</span> 产检时间参考表</div>
+                <div id="checkupSchedule"></div>
+            </div>
+        </div>
+
+        <!-- 危险情况 -->
+        <div class="tab-content" id="tab-danger">
+            <div class="card">
+                <div class="card-title"><span class="emoji">⚠️</span> 孕期危险情况及处理方案</div>
+                <p style="color:var(--text-light);font-size:13px;margin-bottom:16px;">⚠️ 以下情况如遇到请及时就医，切勿自行处理。点击展开查看详细处理方案。</p>
+                <div id="dangerList"></div>
+            </div>
+        </div>
+
+        <!-- 分娩准备 -->
+        <div class="tab-content" id="tab-delivery">
+            <div class="card">
+                <div class="card-title"><span class="emoji">🏥</span> 分娩注意事项</div>
+                <div id="deliveryTips"></div>
+            </div>
+            <div class="card">
+                <div class="card-title">
+                    <span class="emoji">🎒</span> 待产包清单
+                    <span id="bagProgress" style="margin-left:auto;font-size:14px;color:var(--text-light);"></span>
+                </div>
+                <div id="deliveryBag"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">🚨</span> 临产征兆识别</div>
+                <div id="laborSigns"></div>
+            </div>
+        </div>
+
+        <!-- 胎动记录 -->
+        <div class="tab-content" id="tab-kick">
+            <div class="card">
+                <div class="card-title"><span class="emoji">🦶</span> 胎动计数器</div>
+                <p style="color:var(--text-light);font-size:13px;margin-bottom:16px;">建议在孕28周后每天数胎动。早、中、晚各数1小时，3次之和乘以4即为12小时胎动数。正常应≥10次。</p>
+                <div class="kick-counter">
+                    <div class="kick-count-display" id="kickCount">0</div>
+                    <p style="color:var(--text-light);">本时段胎动次数</p>
+                    <button class="kick-btn" onclick="recordKick()">记录<br>胎动</button>
+                    <div style="margin-top:15px;">
+                        <button class="btn btn-secondary btn-sm" onclick="resetKick()">重置计数</button>
+                        <button class="btn btn-primary btn-sm" onclick="saveKickSession()">保存本次记录</button>
+                    </div>
+                    <p style="color:var(--text-light);font-size:12px;margin-top:10px;" id="kickStartTime">尚未开始</p>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">📊</span> 胎动历史记录</div>
+                <div id="kickHistory"></div>
+            </div>
+        </div>
+
+        <!-- 体重管理 -->
+        <div class="tab-content" id="tab-weight">
+            <div class="card">
+                <div class="card-title">
+                    <span class="emoji">⚖️</span> 体重管理
+                    <button class="btn btn-primary btn-sm" style="margin-left:auto;" onclick="openWeightModal()">+ 记录体重</button>
+                </div>
+                <canvas class="weight-chart" id="weightChart"></canvas>
+                <div id="weightStats" style="display:flex;gap:15px;flex-wrap:wrap;margin-top:10px;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">📋</span> 孕期体重增长参考</div>
+                <div id="weightGuide"></div>
+            </div>
+        </div>
+
+        <!-- 设置 -->
+        <div class="tab-content" id="tab-settings">
+            <div class="card">
+                <div class="card-title"><span class="emoji">⚙️</span> 基本设置</div>
+                <div class="settings-row">
+                    <div class="form-group">
+                        <label>末次月经日期</label>
+                        <input type="date" id="lmpDate" onchange="autoCalculateEDD()">
+                    </div>
+                    <div class="form-group">
+                        <label>预产期（自动计算，可修改）</label>
+                        <input type="date" id="eddDate">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="saveSettings()">💾 保存</button>
+                    </div>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">📐</span> 孕前体重指数（BMI）</div>
+                <div class="settings-row" style="grid-template-columns:1fr 1fr 1fr auto;">
+                    <div class="form-group">
+                        <label>身高</label>
+                        <input type="number" id="height" placeholder="cm" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>孕前体重</label>
+                        <input type="number" id="preWeight" placeholder="kg" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <label>当前体重</label>
+                        <input type="number" id="currentWeight" placeholder="kg" step="0.1">
+                    </div>
+                    <div class="form-group">
+                        <button class="btn btn-primary" onclick="saveBodyInfo()">💾 保存</button>
+                    </div>
+                </div>
+                <div id="bmiResult" style="margin-top:15px;"></div>
+            </div>
+            <div class="card">
+                <div class="card-title"><span class="emoji">💾</span> 数据管理</div>
+                <div style="display:flex;gap:10px;flex-wrap:wrap;">
+                    <button class="btn btn-secondary" onclick="exportData()">📤 导出数据</button>
+                    <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">📥 导入数据</button>
+                    <input type="file" id="importFile" style="display:none" accept=".json" onchange="importData(event)">
+                    <button class="btn btn-danger" onclick="clearAllData()">🗑️ 清空所有数据</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 产检记录模态框 -->
+    <div class="modal-overlay" id="checkupModal">
+        <div class="modal">
+            <div class="modal-title">
+                <span id="checkupModalTitle">添加产检记录</span>
+                <button class="modal-close" onclick="closeModal('checkupModal')">×</button>
+            </div>
+            <input type="hidden" id="checkupId">
+            <div class="form-group">
+                <label>产检日期 *</label>
+                <input type="date" id="checkupDate">
+            </div>
+            <div class="form-group">
+                <label>孕周</label>
+                <input type="text" id="checkupWeek" placeholder="如：12周+3天">
+            </div>
+            <div class="form-group">
+                <label>检查医院 <span style="font-size:12px;color:var(--text-light);font-weight:normal;">输入简称可联想全称，点击 📍 可定位附近医院</span></label>
+                <div class="hospital-input-wrapper">
+                    <input type="text" id="checkupHospital" placeholder="如：市妇幼保健院" autocomplete="off" oninput="filterHospitals()" onfocus="showDefaultHospitals()">
+                    <button type="button" class="location-btn" onclick="locateHospitals()" title="定位附近医院">📍</button>
+                </div>
+                <div class="hospital-suggestions" id="hospitalSuggestions"></div>
+                <div class="location-status" id="locationStatus"></div>
+            </div>
+            <div class="form-group">
+                <label>检查项目</label>
+                <input type="text" id="checkupItems" placeholder="如：B超、血常规、唐筛">
+            </div>
+            <div class="form-group">
+                <label>检查结果</label>
+                <textarea id="checkupResult" placeholder="记录检查结果及医生建议"></textarea>
+            </div>
+            <div class="form-group">
+                <label>注意事项</label>
+                <textarea id="checkupNotes" placeholder="医生叮嘱的注意事项"></textarea>
+            </div>
+            <div class="form-group">
+                <label>检查结果图片</label>
+                <input type="file" id="checkupImages" accept="image/*" multiple onchange="previewImages(this)">
+                <div class="image-preview-container" id="imagePreviewContainer"></div>
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button class="btn btn-primary" style="flex:1;" onclick="saveCheckup()">保存记录</button>
+                <button class="btn btn-secondary" onclick="closeModal('checkupModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 体重记录模态框 -->
+    <div class="modal-overlay" id="weightModal">
+        <div class="modal">
+            <div class="modal-title">
+                <span>记录体重</span>
+                <button class="modal-close" onclick="closeModal('weightModal')">×</button>
+            </div>
+            <div class="form-group">
+                <label>日期</label>
+                <input type="date" id="weightDate">
+            </div>
+            <div class="form-group">
+                <label>体重</label>
+                <input type="number" id="weightValue" placeholder="kg" step="0.1">
+            </div>
+            <div style="display:flex;gap:10px;margin-top:20px;">
+                <button class="btn btn-primary" style="flex:1;" onclick="saveWeight()">保存</button>
+                <button class="btn btn-secondary" onclick="closeModal('weightModal')">取消</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 图片查看器 -->
+    <div class="image-viewer" id="imageViewer" onclick="closeImageViewer()">
+        <img id="viewerImg" src="">
+    </div>
+
+    <!-- 提示消息 -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+        // ========== 数据管理 ==========
+        let appData = {
+            lmpDate: null,      // 末次月经日期
+            eddDate: null,      // 预产期
+            height: null,
+            preWeight: null,
+            checkups: [],       // 产检记录
+            kickSessions: [],   // 胎动记录
+            weights: [],        // 体重记录
+            deliveryBag: {},    // 待产包勾选状态
+            currentKickCount: 0,
+            kickStartTime: null
+        };
+
+        // 待产包清单数据
+        const deliveryBagList = {
+            "证件类": [
+                { name: "身份证", note: "原件+复印件" },
+                { name: "医保卡", note: "" },
+                { name: "孕产妇保健手册", note: "所有产检记录" },
+                { name: "产检报告", note: "B超、血检等重要报告" },
+                { name: "银行卡/现金", note: "准备一定现金应急" },
+                { name: "准生证/生育登记", note: "根据当地要求" }
+            ],
+            "妈妈用品": [
+                { name: "月子帽/头巾", note: "" },
+                { name: "哺乳睡衣", note: "2-3套，前开扣" },
+                { name: "产妇卫生巾", note: "大号，多准备" },
+                { name: "一次性内裤", note: "20-30条" },
+                { name: "产妇垫", note: "大号，2-3包" },
+                { name: "哺乳文胸", note: "2-3件" },
+                { name: "防溢乳垫", note: "" },
+                { name: "收腹带", note: "" },
+                { name: "月子鞋", note: "防滑软底" },
+                { name: "吸管杯", note: "方便卧床饮水" },
+                { name: "吸奶器", note: "" },
+                { name: "私处清洗器", note: "" },
+                { name: "洗漱用品", note: "软毛牙刷、毛巾等" },
+                { name: "护肤品", note: "基础保湿即可" }
+            ],
+            "宝宝用品": [
+                { name: "新生儿衣服", note: "3-5套，纯棉" },
+                { name: "包被", note: "薄厚各1条" },
+                { name: "纸尿裤", note: "NB号，2-3包" },
+                { name: "湿巾", note: "婴儿专用" },
+                { name: "奶瓶", note: "1-2个" },
+                { name: "奶粉", note: "小罐备用" },
+                { name: "小毛巾/口水巾", note: "多条" },
+                { name: "婴儿帽", note: "" },
+                { name: "婴儿袜", note: "2-3双" },
+                { name: "护臀霜", note: "" },
+                { name: "婴儿沐浴露", note: "" },
+                { name: "出院衣服", note: "根据季节准备" }
+            ],
+            "进产房必备": [
+                { name: "功能饮料/巧克力", note: "补充体力" },
+                { name: "吸管杯", note: "方便饮水" },
+                { name: "手机及充电器", note: "" },
+                { name: "产妇垫", note: "" },
+                { name: "婴儿包被", note: "" },
+                { name: "新生儿衣服", note: "1套" }
+            ]
+        };
+
+        // 宝宝发育数据（关键周）
+        const babyData = {
+            4: { size: "芝麻粒", length: "0.4cm", weight: "0.4g", emoji: "🔬", desc: "胚胎开始着床发育，三个胚层开始形成" },
+            6: { size: "扁豆", length: "0.6cm", weight: "0.5g", emoji: "🌱", desc: "心脏开始跳动，面部雏形开始形成" },
+            8: { size: "蓝莓", length: "1.6cm", weight: "1g", emoji: "🫐", desc: "四肢开始发育，主要器官形成中" },
+            10: { size: "草莓", length: "3.1cm", weight: "4g", emoji: "🍓", desc: "所有器官已形成，开始快速生长" },
+            12: { size: "青柠", length: "5.4cm", weight: "14g", emoji: "🍋", desc: "胎儿已初具人形，可以辨别性别" },
+            14: { size: "柠檬", length: "8.7cm", weight: "43g", emoji: "🍋", desc: "可以做出面部表情，长出细毛" },
+            16: { size: "牛油果", length: "11.6cm", weight: "100g", emoji: "🥑", desc: "可以感受到胎动，骨骼逐渐变硬" },
+            18: { size: "青椒", length: "14.2cm", weight: "190g", emoji: "🫑", desc: "可以听到声音，生殖器发育" },
+            20: { size: "香蕉", length: "25.6cm", weight: "300g", emoji: "🍌", desc: "头发和指甲开始生长，能吞咽羊水" },
+            22: { size: "木瓜", length: "27.8cm", weight: "430g", emoji: "🟧", desc: "感觉器官发育，可以感受到光线" },
+            24: { size: "玉米", length: "30cm", weight: "600g", emoji: "🌽", desc: "肺部开始发育，大脑快速发育" },
+            26: { size: "生菜", length: "35.6cm", weight: "760g", emoji: "🥬", desc: "眼睛可以睁开，开始有呼吸动作" },
+            28: { size: "茄子", length: "37.6cm", weight: "1kg", emoji: "🍆", desc: "大脑出现皱褶，可以眨眼" },
+            30: { size: "大白菜", length: "39.9cm", weight: "1.3kg", emoji: "🥬", desc: "视觉听觉发育完善，脂肪堆积" },
+            32: { size: "哈密瓜", length: "42.4cm", weight: "1.7kg", emoji: "🍈", desc: "骨骼 fully 发育，指甲长出" },
+            34: { size: "柚子", length: "45cm", weight: "2.1kg", emoji: "🍊", desc: "中枢神经系统发育完善" },
+            36: { size: "菠萝", length: "47.4cm", weight: "2.6kg", emoji: "🍍", desc: "肾脏发育完全，肝脏开始处理废物" },
+            38: { size: "韭葱", length: "49.8cm", weight: "3kg", emoji: "🥗", desc: "器官发育成熟，准备出生" },
+            40: { size: "西瓜", length: "51.2cm", weight: "3.4kg", emoji: "🍉", desc: "发育完成，准备与妈妈见面" }
+        };
+
+        // 孕期注意事项
+        const precautionsData = {
+            first: {
+                title: "孕早期（1-12周）",
+                badge: '<span class="trimester-badge trimester-1">孕早期</span>',
+                tips: [
+                    { icon: "💊", title: "补充叶酸", content: "每日补充0.4mg叶酸，预防神经管畸形" },
+                    { icon: "🚫", title: "避免有害物质", content: "远离烟酒、辐射、化学物质，避免用药" },
+                    { icon: "🍽️", title: "缓解孕吐", content: "少食多餐，清淡饮食，避免空腹" },
+                    { icon: "😴", title: "充分休息", content: "避免劳累和剧烈运动，保证充足睡眠" },
+                    { icon: "🩺", title: "初次产检", content: "孕6-8周B超确认宫内孕，12周NT检查" },
+                    { icon: "😨", title: "警惕先兆流产", content: "出现阴道出血或腹痛及时就医" }
+                ]
+            },
+            second: {
+                title: "孕中期（13-27周）",
+                badge: '<span class="trimester-badge trimester-2">孕中期</span>',
+                tips: [
+                    { icon: "🍖", title: "加强营养", content: "增加蛋白质、铁、钙的摄入" },
+                    { icon: "🏋️", title: "适度运动", content: "可进行散步、孕妇瑜伽等温和运动" },
+                    { icon: "🦶", title: "关注胎动", content: "孕16-20周开始感受胎动，28周后开始数胎动" },
+                    { icon: "🩺", title: "大排畸检查", content: "孕20-24周进行系统B超排畸检查" },
+                    { icon: "🍬", title: "糖耐量检查", content: "孕24-28周进行OGTT糖耐量试验" },
+                    { icon: "😴", title: "左侧卧位", content: "建议左侧卧位休息，改善胎盘血供" }
+                ]
+            },
+            third: {
+                title: "孕晚期（28-40周）",
+                badge: '<span class="trimester-badge trimester-3">孕晚期</span>',
+                tips: [
+                    { icon: "🦶", title: "坚持数胎动", content: "每天早中晚各数1小时胎动" },
+                    { icon: "🎒", title: "准备待产包", content: "孕32周后开始准备待产物品" },
+                    { icon: "🏥", title: "产检频率增加", content: "28-36周每2周一次，36周后每周一次" },
+                    { icon: "🩺", title: "胎心监护", content: "孕32周后开始胎心监护" },
+                    { icon: "⚠️", title: "警惕早产征兆", content: "出现规律宫缩、破水、见红及时就医" },
+                    { icon: "🧘", title: "学习分娩知识", content: "了解分娩过程，练习呼吸法" },
+                    { icon: "💪", title: "会阴按摩", content: "孕34周后可进行会阴按摩，减少撕裂风险" }
+                ]
+            }
+        };
+
+        // 危险情况数据
+        const dangerData = [
+            {
+                title: "阴道出血",
+                severity: "important",
+                symptoms: "孕期任何阶段的阴道出血，量多或量少，颜色鲜红或暗红",
+                causes: "孕早期可能为先兆流产、宫外孕；孕中晚期可能为前置胎盘、胎盘早剥",
+                action: [
+                    "立即停止活动，卧床休息",
+                    "观察出血量、颜色，是否有组织排出",
+                    "不要使用卫生棉条，使用卫生巾便于观察",
+                    "立即去医院急诊，不要自行前往需叫救护车或家人接送",
+                    "切勿自行用药"
+                ]
+            },
+            {
+                title: "剧烈腹痛",
+                severity: "important",
+                symptoms: "持续性或阵发性剧烈腹痛，可能伴有出血",
+                causes: "可能为流产、宫外孕破裂、胎盘早剥、早产等",
+                action: [
+                    "立即卧床，不要随意走动",
+                    "记录疼痛的位置、性质、持续时间",
+                    "立即就医，不要等待",
+                    "不要进食饮水（可能需要手术）",
+                    "不要自行服用止痛药"
+                ]
+            },
+            {
+                title: "胎动异常",
+                severity: "important",
+                symptoms: "胎动明显减少（12小时<10次）、消失或突然异常频繁",
+                causes: "可能为胎儿宫内缺氧、脐带异常、胎盘功能不良",
+                action: [
+                    "立即左侧卧位，喝一杯温水或果汁",
+                    "认真数1小时胎动",
+                    "如胎动仍异常，立即去医院",
+                    "不要自行判断，一定要就医检查",
+                    "就医时带上孕产妇保健手册和近期产检报告"
+                ]
+            },
+            {
+                title: "羊水早破",
+                severity: "important",
+                symptoms: "清澈液体从阴道不受控制地流出，可能突然涌出或持续少量流出",
+                causes: "胎膜早破，可能导致感染或脐带脱垂",
+                action: [
+                    "立即平躺，臀部垫高（防止脐带脱垂）",
+                    "使用干净的卫生巾吸收，观察羊水颜色",
+                    "羊水清亮→尽快去医院；羊水黄绿→立即急诊",
+                    "不要洗澡，不要性交",
+                    "记录破水时间",
+                    "立即去医院，途中保持平卧"
+                ]
+            },
+            {
+                title: "严重头痛/视物模糊",
+                severity: "important",
+                symptoms: "持续性剧烈头痛、视力模糊、眼前飞蚊、上腹部疼痛",
+                causes: "可能为妊娠期高血压、子痫前期的表现",
+                action: [
+                    "立即测量血压（如有血压计）",
+                    "卧床休息，左侧卧位",
+                    "立即就医，不要拖延",
+                    "记录症状开始时间和变化",
+                    "避免强光刺激"
+                ]
+            },
+            {
+                title: "全身严重水肿",
+                severity: "attention",
+                symptoms: "面部、手部、脚部突然出现明显水肿，体重短期内快速增加",
+                causes: "可能为妊娠期高血压、子痫前期",
+                action: [
+                    "监测血压",
+                    "减少盐分摄入",
+                    "注意是否伴有头痛、视物模糊",
+                    "及时就医检查尿蛋白",
+                    "记录水肿变化情况"
+                ]
+            },
+            {
+                title: "高烧不退",
+                severity: "important",
+                symptoms: "体温超过38.5℃，持续不退",
+                causes: "可能为感染性疾病，对胎儿发育有影响",
+                action: [
+                    "物理降温（温水擦浴）",
+                    "多饮水，注意休息",
+                    "及时就医查明原因",
+                    "不要自行服用退烧药",
+                    "记录体温变化"
+                ]
+            },
+            {
+                title: "严重呕吐无法进食",
+                severity: "attention",
+                symptoms: "频繁呕吐无法进食饮水，尿少，体重下降",
+                causes: "妊娠剧吐，可能导致脱水和电解质紊乱",
+                action: [
+                    "尝试少量多次饮水或电解质水",
+                    "进食干燥的饼干、面包",
+                    "如完全无法进食饮水，及时就医",
+                    "可能需要静脉补液",
+                    "记录呕吐次数和尿量"
+                ]
+            },
+            {
+                title: "规律宫缩（未足月）",
+                severity: "important",
+                symptoms: "孕37周前出现规律宫缩（每5-10分钟一次，每次持续30秒以上）",
+                causes: "可能为先兆早产",
+                action: [
+                    "立即卧床，左侧卧位",
+                    "喝温水观察是否缓解",
+                    "如不缓解或伴有出血、破水，立即就医",
+                    "记录宫缩频率和持续时间",
+                    "不要长时间站立或走动"
+                ]
+            },
+            {
+                title: "皮肤严重瘙痒",
+                severity: "attention",
+                symptoms: "全身尤其是手脚心严重瘙痒，夜间加重，可能伴有黄疸",
+                causes: "可能为妊娠期肝内胆汁淤积症，影响胎儿安全",
+                action: [
+                    "及时就医检查肝功能和胆汁酸",
+                    "不要过度抓挠，可涂抹炉甘石洗剂",
+                    "注意胎动变化",
+                    "按医嘱用药",
+                    "可能需要提前终止妊娠"
+                ]
+            }
+        ];
+
+        // 分娩注意事项
+        const deliveryTipsData = [
+            { icon: "⏰", title: "识别临产征兆", content: "见红、破水、规律宫缩是三大临产征兆。见红后通常24-48小时内分娩；破水需立即去医院；规律宫缩（5-6分钟一次）应前往医院。" },
+            { icon: "🧘", title: "练习呼吸法", content: "学习拉玛泽呼吸法：宫缩来时深吸慢呼，配合按摩。正确呼吸可以减轻疼痛、保存体力。" },
+            { icon: "💪", title: "保存体力", content: "宫缩间歇期抓紧休息，少量进食补充能量。不要大喊大叫浪费体力，第二产程需要用力。" },
+            { icon: "🚗", title: "及时前往医院", content: "初产妇宫缩5分钟一次、经产妇宫缩规律即应出发。破水者立即去医院，途中平卧。" },
+            { icon: "📝", title: "准备好证件", content: "身份证、医保卡、孕产妇保健手册、产检报告等随身携带，方便随时出发。" },
+            { icon: "🤝", title: "信任医生", content: "配合医生的指导，不要过度紧张。现代医学发达，分娩安全性很高。" },
+            { icon: "🍼", title: "准备母乳喂养", content: "分娩后尽早开奶（30分钟内），初乳对宝宝非常珍贵。学习正确的哺乳姿势。" },
+            { icon: "💜", title: "关注心理健康", content: "产后可能出现情绪波动，注意产后抑郁。有需要及时向家人和医生求助。" }
+        ];
+
+        // 临产征兆
+        const laborSignsData = [
+            { title: "见红", desc: "阴道排出少量血性分泌物（粉红、暗红或褐色），是宫颈开始变化的信号", action: "通常不需要立即去医院，等待规律宫缩后出发。如出血量多于月经量则立即就医", urgency: "normal" },
+            { title: "破水", desc: "羊膜破裂，清澈羊水从阴道流出，不受控制", action: "立即平卧，臀部垫高，不要洗澡，立即去医院", urgency: "important" },
+            { title: "规律宫缩", desc: "宫缩规律出现，间隔5-6分钟，持续30-60秒，疼痛逐渐加强", action: "初产妇可以准备出发，经产妇应立即出发", urgency: "attention" },
+            { title: "胎儿下降感", desc: "感觉腹部下方变轻松，呼吸更顺畅，尿频加重", action: "说明胎儿入盆，分娩可能在未来几天内开始，做好准备", urgency: "normal" },
+            { title: "腰酸背痛", desc: "持续性腰酸，类似经期不适", action: "可能是临产前兆，注意观察是否出现规律宫缩", urgency: "normal" }
+        ];
+
+        // 产检时间表
+        const checkupScheduleData = [
+            { weeks: "6-8周", items: "初次产检、B超确认宫内孕", desc: "确认宫内妊娠，检查胎心" },
+            { weeks: "11-13周", items: "NT检查、建卡", desc: "颈项透明层检查，染色体异常筛查" },
+            { weeks: "15-20周", items: "唐氏筛查/无创DNA", desc: "唐氏综合征筛查" },
+            { weeks: "20-24周", items: "系统B超大排畸", desc: "全面检查胎儿器官发育" },
+            { weeks: "24-28周", items: "糖耐量试验(OGTT)", desc: "筛查妊娠期糖尿病" },
+            { weeks: "28周", items: "血常规、胎位检查", desc: "检查贫血，确认胎位" },
+            { weeks: "30周", items: "常规产检、胎心监护", desc: "评估胎儿发育" },
+            { weeks: "32周", items: "B超、胎心监护", desc: "检查胎儿大小和羊水" },
+            { weeks: "34周", items: "胎心监护、骨盆评估", desc: "评估分娩方式" },
+            { weeks: "36周", items: "B超、胎心监护、GBS", desc: "B族链球菌筛查" },
+            { weeks: "37周", items: "胎心监护、评估分娩条件", desc: "准备分娩" },
+            { weeks: "38-40周", items: "每周产检、胎心监护", desc: "密切监测，等待分娩" }
+        ];
+
+        // 医院简称关键词映射（支持简称联想全称）
+        const hospitalKeywordMap = {
+            '妇幼': ['妇幼保健院', '妇女儿童医院', '市妇幼保健院', '区妇幼保健院'],
+            '人民': ['人民医院', '市第一人民医院', '市第二人民医院', '市第三人民医院'],
+            '中心': ['中心医院', '市人民医院', '市第一医院'],
+            '第一': ['第一人民医院', '第一医院'],
+            '第二': ['第二人民医院'],
+            '第三': ['第三人民医院'],
+            '协和': ['协和医院'],
+            '华西': ['华西医院', '华西第二医院', '华西妇产儿童医院'],
+            '省医': ['省人民医院', '省立医院'],
+            '市医': ['市人民医院'],
+            '中医': ['中医院', '中医药大学附属医院'],
+            '儿童': ['儿童医院', '妇女儿童医院'],
+            '肿瘤': ['肿瘤医院'],
+            '口腔': ['口腔医院'],
+            '眼科': ['眼科医院'],
+            '妇产': ['妇产医院', '妇幼保健院', '妇产科医院'],
+            '口腔': ['口腔医院'],
+            '骨科': ['骨科医院'],
+            '皮肤': ['皮肤病医院'],
+            '精神': ['精神卫生中心', '精神病医院'],
+            '胸科': ['胸科医院'],
+            '肺科': ['肺科医院']
+        };
+
+        // 主要城市常见医院库（用于定位后推荐）
+        const cityHospitals = {
+            '北京': ['北京协和医院', '北京大学第一医院', '北京大学第三医院', '北京妇产医院', '北京市海淀区妇幼保健院', '首都医科大学附属北京妇产医院', '北京和睦家医院'],
+            '上海': ['复旦大学附属妇产科医院', '上海市第一妇婴保健院', '上海交通大学医学院附属仁济医院', '上海市第六人民医院', '上海市长海医院', '上海交通大学医学院附属新华医院'],
+            '广州': ['广州市妇女儿童医疗中心', '中山大学附属第一医院', '广东省妇幼保健院', '南方医科大学南方医院', '广州市第一人民医院'],
+            '深圳': ['深圳市妇幼保健院', '北京大学深圳医院', '深圳市人民医院', '香港大学深圳医院', '深圳市中医院'],
+            '成都': ['四川大学华西第二医院', '成都市妇女儿童中心医院', '四川省妇幼保健院', '成都市第一人民医院', '四川省人民医院'],
+            '杭州': ['浙江大学医学院附属妇产科医院', '杭州市妇产科医院', '浙江省人民医院', '杭州市第一人民医院', '浙江大学医学院附属儿童医院'],
+            '武汉': ['武汉大学人民医院', '湖北省妇幼保健院', '武汉协和医院', '武汉市中心医院', '华中科技大学同济医学院附属同济医院'],
+            '西安': ['西北妇女儿童医院', '西安交通大学第一附属医院', '西安市第四医院', '陕西省人民医院', '西安高新医院'],
+            '重庆': ['重庆市妇幼保健院', '重庆医科大学附属第一医院', '重庆医科大学附属儿童医院', '重庆市人民医院', '陆军军医大学西南医院'],
+            '南京': ['南京市妇幼保健院', '江苏省人民医院', '南京鼓楼医院', '东南大学附属中大医院', '南京市第一医院'],
+            '天津': ['天津市中心妇产科医院', '天津医科大学总医院', '天津市第一中心医院', '天津市人民医院', '天津市儿童医院'],
+            '苏州': ['苏州市立医院', '苏州大学附属第一医院', '苏州市妇幼保健院', '苏州大学附属儿童医院'],
+            '郑州': ['郑州大学第一附属医院', '河南省妇幼保健院', '郑州市妇幼保健院', '河南省人民医院'],
+            '长沙': ['中南大学湘雅医院', '湖南省妇幼保健院', '长沙市妇幼保健院', '中南大学湘雅二医院'],
+            '青岛': ['青岛市妇女儿童医院', '青岛大学附属医院', '青岛市市立医院', '青岛市中心医院'],
+            '沈阳': ['中国医科大学附属盛京医院', '沈阳市妇幼保健院', '辽宁省人民医院', '中国医科大学附属第一医院'],
+            '大连': ['大连市妇幼保健院', '大连医科大学附属第一医院', '大连市中心医院'],
+            '厦门': ['厦门市妇幼保健院', '厦门大学附属第一医院', '厦门市中医院'],
+            '济南': ['山东省妇幼保健院', '山东大学齐鲁医院', '济南市妇幼保健院', '山东省立医院'],
+            '合肥': ['安徽省妇幼保健院', '安徽医科大学第一附属医院', '合肥市第一人民医院'],
+            '福州': ['福建省妇幼保健院', '福建医科大学附属第一医院', '福州市妇幼保健院'],
+            '昆明': ['云南省妇幼保健院', '昆明医科大学第一附属医院', '昆明市妇幼保健院'],
+            '哈尔滨': ['哈尔滨市红十字中心医院', '哈尔滨医科大学附属第一医院', '黑龙江省医院'],
+            '南昌': ['江西省妇幼保健院', '南昌大学第一附属医院', '南昌市第一医院'],
+            '南宁': ['广西壮族自治区妇幼保健院', '南宁市妇幼保健院', '广西医科大学第一附属医院'],
+            '贵阳': ['贵州省妇幼保健院', '贵州医科大学附属医院', '贵阳市妇幼保健院'],
+            '石家庄': ['石家庄市妇幼保健院', '河北医科大学第二医院', '河北省人民医院'],
+            '太原': ['山西省妇幼保健院', '山西医科大学第一医院', '太原市中心医院'],
+            '兰州': ['甘肃省妇幼保健院', '兰州大学第一医院', '兰州市第一人民医院'],
+            '海口': ['海南省妇幼保健院', '海南省人民医院', '海口市人民医院'],
+            '银川': ['银川市妇幼保健院', '宁夏医科大学总医院'],
+            '西宁': ['青海省妇幼保健院', '青海省人民医院'],
+            '拉萨': ['西藏自治区人民医院', '拉萨市人民医院'],
+            '乌鲁木齐': ['新疆维吾尔自治区妇幼保健院', '新疆医科大学第一附属医院']
+        };
+
+        // 默认通用医院（定位失败或城市不在库中时使用）
+        const defaultHospitals = [
+            '妇幼保健院', '人民医院', '中心医院', '第一医院', '第二人民医院', '第三人民医院',
+            '妇产医院', '妇女儿童医院', '中医院', '大学附属医院'
+        ];
+
+        // 获取历史产检医院
+        function getHistoryHospitals() {
+            if (!appData.checkups) return [];
+            const hospitals = [...new Set(appData.checkups.map(c => c.hospital).filter(h => h && h.trim()))];
+            return hospitals.map(h => ({ name: h, tag: '历史' }));
+        }
+
+        // 根据城市获取医院推荐
+        function getCityHospitals(cityName) {
+            if (!cityName) return [];
+            for (const [city, hospitals] of Object.entries(cityHospitals)) {
+                if (cityName.includes(city)) {
+                    return hospitals.map(h => ({ name: h, tag: city }));
+                }
+            }
+            return defaultHospitals.map(h => ({ name: h, tag: '常用' }));
+        }
+
+        // 根据输入关键词联想医院
+        function searchHospitalSuggestions(keyword) {
+            if (!keyword || keyword.trim() === '') {
+                return [];
+            }
+            const kw = keyword.trim().toLowerCase();
+            let results = [];
+
+            // 1. 关键词映射
+            for (const [key, expansions] of Object.entries(hospitalKeywordMap)) {
+                if (key.includes(kw) || kw.includes(key)) {
+                    results.push(...expansions.map(name => ({ name, tag: '联想' })));
+                }
+            }
+
+            // 2. 从城市医院库中匹配
+            for (const [city, hospitals] of Object.entries(cityHospitals)) {
+                for (const h of hospitals) {
+                    if (h.toLowerCase().includes(kw)) {
+                        results.push({ name: h, tag: city });
+                    }
+                }
+            }
+
+            // 3. 历史记录匹配
+            const history = getHistoryHospitals();
+            for (const h of history) {
+                if (h.name.toLowerCase().includes(kw)) {
+                    results.push(h);
+                }
+            }
+
+            // 去重并限制数量
+            const seen = new Set();
+            return results.filter(r => {
+                if (seen.has(r.name)) return false;
+                seen.add(r.name);
+                return true;
+            }).slice(0, 8);
+        }
+
+        // 显示联想下拉
+        function renderHospitalSuggestions(suggestions) {
+            const container = document.getElementById('hospitalSuggestions');
+            if (!suggestions || suggestions.length === 0) {
+                container.classList.remove('active');
+                container.innerHTML = '';
+                return;
+            }
+            container.innerHTML = suggestions.map((s, i) => `
+                <div class="hospital-suggestion-item ${i === 0 ? 'active' : ''}" onclick="selectHospital('${s.name.replace(/'/g, "\\'")}')">
+                    <span class="sugg-icon">🏥</span>
+                    <span class="sugg-text">${s.name}</span>
+                    <span class="sugg-tag">${s.tag}</span>
+                </div>
+            `).join('');
+            container.classList.add('active');
+        }
+
+        function filterHospitals() {
+            const input = document.getElementById('checkupHospital');
+            const keyword = input.value;
+            const suggestions = searchHospitalSuggestions(keyword);
+            renderHospitalSuggestions(suggestions);
+        }
+
+        function selectHospital(name) {
+            document.getElementById('checkupHospital').value = name;
+            document.getElementById('hospitalSuggestions').classList.remove('active');
+            document.getElementById('hospitalSuggestions').innerHTML = '';
+        }
+
+        function showDefaultHospitals() {
+            const input = document.getElementById('checkupHospital');
+            if (input.value.trim() !== '') return;
+            const history = getHistoryHospitals();
+            if (history.length > 0) {
+                renderHospitalSuggestions(history.slice(0, 6));
+            }
+        }
+
+        // 定位附近医院
+        function locateHospitals() {
+            const status = document.getElementById('locationStatus');
+            if (!navigator.geolocation) {
+                status.textContent = '您的浏览器不支持定位功能';
+                status.className = 'location-status error';
+                return;
+            }
+            status.textContent = '正在获取您的位置...';
+            status.className = 'location-status loading';
+
+            navigator.geolocation.getCurrentPosition(
+                async (position) => {
+                    const { latitude, longitude } = position.coords;
+                    status.textContent = '正在解析城市信息...';
+                    try {
+                        // 使用 OpenStreetMap Nominatim 反向地理编码（免费，需遵守使用政策）
+                        const response = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=zh-CN`);
+                        const data = await response.json();
+                        const cityName = data.address?.city || data.address?.district || data.address?.county || data.address?.state || '';
+
+                        if (cityName) {
+                            status.textContent = `📍 已定位到：${cityName}，为您推荐当地医院`;
+                            status.className = 'location-status success';
+                            const suggestions = getCityHospitals(cityName);
+                            renderHospitalSuggestions(suggestions.slice(0, 8));
+                        } else {
+                            status.textContent = '定位成功，但未能识别城市，已显示常用医院';
+                            status.className = 'location-status';
+                            renderHospitalSuggestions(defaultHospitals.map(h => ({ name: h, tag: '常用' })));
+                        }
+                    } catch (err) {
+                        status.textContent = '定位解析失败，请手动输入医院名称';
+                        status.className = 'location-status error';
+                        renderHospitalSuggestions(defaultHospitals.map(h => ({ name: h, tag: '常用' })));
+                    }
+                },
+                (err) => {
+                    let msg = '定位失败';
+                    if (err.code === 1) msg = '定位权限被拒绝，请手动输入医院';
+                    else if (err.code === 2) msg = '无法获取位置信息';
+                    else if (err.code === 3) msg = '定位超时';
+                    status.textContent = msg;
+                    status.className = 'location-status error';
+                    renderHospitalSuggestions(defaultHospitals.map(h => ({ name: h, tag: '常用' })));
+                },
+                { enableHighAccuracy: false, timeout: 10000, maximumAge: 600000 }
+            );
+        }
+
+        // 点击页面其他区域关闭联想下拉
+        document.addEventListener('click', (e) => {
+            const wrapper = document.querySelector('.hospital-input-wrapper');
+            const suggestions = document.getElementById('hospitalSuggestions');
+            if (wrapper && suggestions && !wrapper.contains(e.target) && !suggestions.contains(e.target)) {
+                suggestions.classList.remove('active');
+            }
+        });
+
+        // ========== 初始化 ==========
+        function loadData() {
+            const saved = localStorage.getItem('pregnancyData');
+            if (saved) {
+                appData = { ...appData, ...JSON.parse(saved) };
+            }
+        }
+
+        function saveData() {
+            localStorage.setItem('pregnancyData', JSON.stringify(appData));
+        }
+
+        // ========== 孕周计算 ==========
+        function calculateWeek() {
+            if (!appData.lmpDate) return null;
+            const lmp = new Date(appData.lmpDate);
+            const now = new Date();
+            const diff = now - lmp;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            const weeks = Math.floor(days / 7);
+            const remainDays = days % 7;
+            return { weeks, days, remainDays, totalDays: days };
+        }
+
+        function calculateEDD() {
+            if (!appData.lmpDate) return null;
+            const lmp = new Date(appData.lmpDate);
+            const edd = new Date(lmp);
+            edd.setDate(edd.getDate() + 280);
+            return edd.toISOString().split('T')[0];
+        }
+
+        function autoCalculateEDD() {
+            const lmp = document.getElementById('lmpDate').value;
+            if (lmp) {
+                appData.lmpDate = lmp;
+                const edd = calculateEDD();
+                document.getElementById('eddDate').value = edd;
+                showToast('预产期已自动计算', 'success');
+            }
+        }
+
+        function getTrimester(week) {
+            if (week < 13) return 'first';
+            if (week < 28) return 'second';
+            return 'third';
+        }
+
+        // 获取最近的宝宝发育数据
+        function getBabyData(week) {
+            const keys = Object.keys(babyData).map(Number).sort((a,b) => a-b);
+            let result = babyData[keys[0]];
+            for (const k of keys) {
+                if (week >= k) result = babyData[k];
+            }
+            return result;
+        }
+
+        // ========== Tab 切换 ==========
+        document.querySelectorAll('.nav-tab').forEach(tab => {
+            tab.addEventListener('click', () => {
+                document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                tab.classList.add('active');
+                document.getElementById('tab-' + tab.dataset.tab).classList.add('active');
+                renderTab(tab.dataset.tab);
+            });
+        });
+
+        function renderTab(tab) {
+            switch(tab) {
+                case 'overview': renderOverview(); break;
+                case 'baby': renderBaby(); break;
+                case 'checkup': renderCheckup(); break;
+                case 'danger': renderDanger(); break;
+                case 'delivery': renderDelivery(); break;
+                case 'kick': renderKick(); break;
+                case 'weight': renderWeight(); break;
+                case 'settings': renderSettings(); break;
+            }
+        }
+
+        // ========== 总览 ==========
+        function renderOverview() {
+            const weekInfo = calculateWeek();
+            const headerWeek = document.getElementById('headerWeek');
+            const headerDate = document.getElementById('headerDate');
+            headerDate.textContent = new Date().toLocaleDateString('zh-CN');
+
+            if (!weekInfo) {
+                document.getElementById('overviewContent').innerHTML = `
+                    <div class="empty-state">
+                        <div class="emoji">📅</div>
+                        <p>请先在「设置」中填写末次月经日期，开始记录您的孕期旅程</p>
+                    </div>`;
+                headerWeek.textContent = '--';
+                document.getElementById('quickTipsCard').style.display = 'none';
+                document.getElementById('recentCheckupCard').style.display = 'none';
+                return;
+            }
+
+            headerWeek.textContent = weekInfo.weeks;
+
+            const edd = appData.eddDate || calculateEDD();
+            const eddDate = new Date(edd);
+            const now = new Date();
+            const daysToEDD = Math.ceil((eddDate - now) / (1000 * 60 * 60 * 24));
+            const progress = Math.min((weekInfo.totalDays / 280) * 100, 100);
+            const trimester = getTrimester(weekInfo.weeks);
+            const trimesterText = trimester === 'first' ? '孕早期' : trimester === 'second' ? '孕中期' : '孕晚期';
+            const baby = getBabyData(weekInfo.weeks);
+
+            document.getElementById('overviewContent').innerHTML = `
+                <div class="week-display">
+                    <div class="info-box">
+                        <div class="label">当前孕周</div>
+                        <div class="value">${weekInfo.weeks}<span class="unit">周+${weekInfo.remainDays}天</span></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">距预产期</div>
+                        <div class="value">${daysToEDD > 0 ? daysToEDD : '已到'}<span class="unit">${daysToEDD > 0 ? '天' : ''}</span></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">孕期阶段</div>
+                        <div class="value" style="font-size:20px;">${trimesterText}</div>
+                    </div>
+                    <div class="info-box">
+                        <div class="label">宝宝约重</div>
+                        <div class="value">${baby.weight}<span class="unit"></span></div>
+                    </div>
+                </div>
+                <div class="progress-container">
+                    <div style="display:flex;justify-content:space-between;margin-bottom:6px;font-size:13px;color:var(--text-light);">
+                        <span>孕期进度</span>
+                        <span>${progress.toFixed(1)}%</span>
+                    </div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width:${progress}%;">${progress.toFixed(1)}%</div>
+                    </div>
+                </div>
+                <div style="background:linear-gradient(135deg,#fff9c4,#fff3e0);padding:16px;border-radius:12px;margin-top:15px;text-align:center;">
+                    <div style="font-size:36px;">${baby.emoji}</div>
+                    <p style="margin-top:8px;font-size:14px;">本周宝宝约 ${baby.length}，大小像${baby.size}</p>
+                    <p style="font-size:13px;color:var(--text-light);margin-top:4px;">${baby.desc}</p>
+                </div>
+                <div style="text-align:center;margin-top:15px;">
+                    <span class="trimester-badge trimester-${trimester === 'first' ? '1' : trimester === 'second' ? '2' : '3'}">${trimesterText} · 第${weekInfo.weeks}周</span>
+                    ${edd ? `<span style="margin-left:10px;font-size:13px;color:var(--text-light);">预产期：${edd}</span>` : ''}
+                </div>
+            `;
+
+            // 本周温馨提示
+            const tips = precautionsData[trimester];
+            const weekTips = tips.tips.slice(0, 3).map(t =>
+                `<div class="delivery-tip"><div class="tip-icon">${t.icon}</div><div class="tip-content"><strong>${t.title}</strong><br>${t.content}</div></div>`
+            ).join('');
+            document.getElementById('quickTipsCard').style.display = 'block';
+            document.getElementById('quickTips').innerHTML = weekTips;
+
+            // 近期产检
+            renderRecentCheckup(weekInfo.weeks);
+        }
+
+        function renderRecentCheckup(currentWeek) {
+            const upcoming = checkupScheduleData.filter(s => {
+                const maxWeek = parseInt(s.weeks.match(/\d+/g).pop());
+                return maxWeek >= currentWeek;
+            }).slice(0, 3);
+
+            const done = checkupScheduleData.filter(s => {
+                const maxWeek = parseInt(s.weeks.match(/\d+/g).pop());
+                return maxWeek < currentWeek;
+            });
+
+            let html = '';
+            if (upcoming.length > 0) {
+                html += '<p style="font-size:14px;color:var(--text-light);margin-bottom:10px;">即将到来的产检：</p>';
+                upcoming.forEach(s => {
+                    html += `
+                        <div class="checkup-schedule-item">
+                            <div class="week-tag">${s.weeks}</div>
+                            <div class="checkup-content">
+                                <strong>${s.items}</strong>
+                                ${s.desc}
+                            </div>
+                        </div>`;
+                });
+            }
+            document.getElementById('recentCheckupCard').style.display = 'block';
+            document.getElementById('recentCheckup').innerHTML = html;
+        }
+
+        // ========== 宝宝发育 ==========
+        function renderBaby() {
+            const weekInfo = calculateWeek();
+            const card = document.getElementById('babyDevelopmentCard');
+
+            if (!weekInfo) {
+                card.innerHTML = `<div class="empty-state"><div class="emoji">👶</div><p>请先在「设置」中设置末次月经日期</p></div>`;
+                document.getElementById('precautions').innerHTML = '';
+                return;
+            }
+
+            const baby = getBabyData(weekInfo.weeks);
+            const nextWeeks = Object.keys(babyData).map(Number).filter(w => w > weekInfo.weeks).sort((a,b)=>a-b);
+            const nextMilestone = nextWeeks.length > 0 ? babyData[nextWeeks[0]] : null;
+            const nextWeek = nextWeeks.length > 0 ? nextWeeks[0] : 40;
+
+            card.innerHTML = `
+                <div class="card-title"><span class="emoji">👶</span> 第${weekInfo.weeks}周宝宝发育</div>
+                <div class="baby-development">
+                    <div class="baby-visual">
+                        <div class="baby-emoji">${baby.emoji}</div>
+                        <div class="baby-size">约 ${baby.length}</div>
+                    </div>
+                    <div>
+                        <ul class="baby-info-list">
+                            <li><span class="bullet">📏</span> <strong>身长：</strong>${baby.length}</li>
+                            <li><span class="bullet">⚖️</span> <strong>体重：</strong>约 ${baby.weight}</li>
+                            <li><span class="bullet">🍎</span> <strong>大小：</strong>相当于一个${baby.size}</li>
+                            <li><span class="bullet">📝</span> <strong>发育情况：</strong>${baby.desc}</li>
+                            ${nextMilestone ? `
+                                <li style="flex-direction:column;align-items:flex-start;gap:2px;">
+                                    <div><span class="bullet">➡️</span> <strong>下个里程碑（第${nextWeek}周）</strong></div>
+                                    <div style="margin-left:24px;font-size:13px;color:var(--text-light);line-height:1.5;">${nextMilestone.desc}</div>
+                                </li>` : ''}
+                        </ul>
+                    </div>
+                </div>
+                <div style="margin-top:20px;padding:16px;background:linear-gradient(135deg,#e3f2fd,#bbdefb);border-radius:12px;">
+                    <p style="font-size:14px;">💡 <strong>温馨提示：</strong>每个宝宝的发育速度不同，以上数据为平均值参考。如有疑问请咨询您的产检医生。</p>
+                </div>
+            `;
+
+            // 注意事项
+            const trimester = getTrimester(weekInfo.weeks);
+            const precautions = precautionsData[trimester];
+            let precautHtml = `<p style="margin-bottom:15px;">${precautions.badge} <strong style="font-size:16px;">${precautions.title}注意事项</strong></p>`;
+            precautHtml += '<div>';
+            precautions.tips.forEach(t => {
+                precautHtml += `
+                    <div class="delivery-tip">
+                        <div class="tip-icon">${t.icon}</div>
+                        <div class="tip-content"><strong>${t.title}</strong><br>${t.content}</div>
+                    </div>`;
+            });
+            precautHtml += '</div>';
+            document.getElementById('precautions').innerHTML = precautHtml;
+        }
+
+        // ========== 产检记录 ==========
+        function renderCheckup() {
+            const list = document.getElementById('checkupList');
+            if (appData.checkups.length === 0) {
+                list.innerHTML = `<div class="empty-state"><div class="emoji">🏥</div><p>暂无产检记录，点击右上角添加</p></div>`;
+            } else {
+                list.innerHTML = appData.checkups.slice().reverse().map(c => `
+                    <div class="record-item">
+                        <div class="record-header">
+                            <div>
+                                <div class="record-title">${c.date} ${c.week ? '· ' + c.week : ''}</div>
+                                ${c.hospital ? `<div class="record-date">📍 ${c.hospital}</div>` : ''}
+                            </div>
+                            <div>
+                                <button class="btn btn-secondary btn-sm" onclick="editCheckup('${c.id}')">编辑</button>
+                                <button class="btn btn-danger btn-sm" onclick="deleteCheckup('${c.id}')">删除</button>
+                            </div>
+                        </div>
+                        ${c.items ? `<div class="record-content"><strong>检查项目：</strong>${c.items}</div>` : ''}
+                        ${c.result ? `<div class="record-content"><strong>结果：</strong>${c.result}</div>` : ''}
+                        ${c.notes ? `<div class="record-content"><strong>注意事项：</strong>${c.notes}</div>` : ''}
+                        ${c.images && c.images.length > 0 ? `
+                            <div class="record-images">
+                                ${c.images.map(img => `<img src="${img}" onclick="viewImage('${img}')">`).join('')}
+                            </div>
+                        ` : ''}
+                    </div>
+                `).join('');
+            }
+
+            // 产检时间表
+            const weekInfo = calculateWeek();
+            const currentWeek = weekInfo ? weekInfo.weeks : 0;
+            const scheduleHtml = checkupScheduleData.map(s => {
+                const maxWeek = parseInt(s.weeks.match(/\d+/g).pop());
+                const isDone = maxWeek < currentWeek;
+                const isCurrent = maxWeek >= currentWeek && maxWeek <= currentWeek + 4;
+                return `
+                    <div class="checkup-schedule-item ${isDone ? 'done' : ''}">
+                        <div class="week-tag">${s.weeks}</div>
+                        <div class="checkup-content">
+                            <strong>${s.items}</strong>
+                            ${s.desc}
+                            ${isDone ? '<div class="status-tag tag tag-normal">✓ 已完成</div>' : isCurrent ? '<div class="status-tag tag tag-attention">⏰ 近期安排</div>' : ''}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            document.getElementById('checkupSchedule').innerHTML = scheduleHtml;
+        }
+
+        function openCheckupModal(id) {
+            document.getElementById('checkupModalTitle').textContent = id ? '编辑产检记录' : '添加产检记录';
+            document.getElementById('imagePreviewContainer').innerHTML = '';
+            document.getElementById('hospitalSuggestions').classList.remove('active');
+            document.getElementById('hospitalSuggestions').innerHTML = '';
+            document.getElementById('locationStatus').textContent = '';
+            document.getElementById('locationStatus').className = 'location-status';
+            pendingImages = [];
+
+            if (id) {
+                const c = appData.checkups.find(c => c.id === id);
+                if (c) {
+                    document.getElementById('checkupId').value = c.id;
+                    document.getElementById('checkupDate').value = c.date;
+                    document.getElementById('checkupWeek').value = c.week || '';
+                    document.getElementById('checkupHospital').value = c.hospital || '';
+                    document.getElementById('checkupItems').value = c.items || '';
+                    document.getElementById('checkupResult').value = c.result || '';
+                    document.getElementById('checkupNotes').value = c.notes || '';
+                    if (c.images && c.images.length > 0) {
+                        pendingImages = [...c.images];
+                        renderImagePreview();
+                    }
+                }
+            } else {
+                document.getElementById('checkupId').value = '';
+                document.getElementById('checkupDate').value = new Date().toISOString().split('T')[0];
+                const weekInfo = calculateWeek();
+                if (weekInfo) {
+                    document.getElementById('checkupWeek').value = `${weekInfo.weeks}周+${weekInfo.remainDays}天`;
+                }
+                document.getElementById('checkupHospital').value = '';
+                document.getElementById('checkupItems').value = '';
+                document.getElementById('checkupResult').value = '';
+                document.getElementById('checkupNotes').value = '';
+            }
+            document.getElementById('checkupModal').classList.add('active');
+        }
+
+        function editCheckup(id) {
+            openCheckupModal(id);
+        }
+
+        function deleteCheckup(id) {
+            if (confirm('确定删除这条产检记录吗？')) {
+                appData.checkups = appData.checkups.filter(c => c.id !== id);
+                saveData();
+                renderCheckup();
+                showToast('记录已删除', 'success');
+            }
+        }
+
+        let pendingImages = [];
+
+        function previewImages(input) {
+            const files = Array.from(input.files);
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    // 压缩图片
+                    compressImage(e.target.result, 800, 0.7).then(compressed => {
+                        pendingImages.push(compressed);
+                        renderImagePreview();
+                    });
+                };
+                reader.readAsDataURL(file);
+            });
+            input.value = '';
+        }
+
+        function compressImage(dataUrl, maxSize, quality) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.onload = () => {
+                    let { width, height } = img;
+                    if (width > maxSize || height > maxSize) {
+                        if (width > height) {
+                            height = (height / width) * maxSize;
+                            width = maxSize;
+                        } else {
+                            width = (width / height) * maxSize;
+                            height = maxSize;
+                        }
+                    }
+                    const canvas = document.createElement('canvas');
+                    canvas.width = width;
+                    canvas.height = height;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    resolve(canvas.toDataURL('image/jpeg', quality));
+                };
+                img.src = dataUrl;
+            });
+        }
+
+        function renderImagePreview() {
+            const container = document.getElementById('imagePreviewContainer');
+            container.innerHTML = pendingImages.map((img, i) => `
+                <div class="image-preview">
+                    <img src="${img}">
+                    <button class="remove-img" onclick="removeImage(${i})">×</button>
+                </div>
+            `).join('');
+        }
+
+        function removeImage(index) {
+            pendingImages.splice(index, 1);
+            renderImagePreview();
+        }
+
+        function saveCheckup() {
+            const date = document.getElementById('checkupDate').value;
+            if (!date) {
+                showToast('请选择产检日期', 'error');
+                return;
+            }
+            const id = document.getElementById('checkupId').value || Date.now().toString();
+            const checkup = {
+                id,
+                date,
+                week: document.getElementById('checkupWeek').value,
+                hospital: document.getElementById('checkupHospital').value,
+                items: document.getElementById('checkupItems').value,
+                result: document.getElementById('checkupResult').value,
+                notes: document.getElementById('checkupNotes').value,
+                images: [...pendingImages]
+            };
+
+            const existing = appData.checkups.findIndex(c => c.id === id);
+            if (existing >= 0) {
+                appData.checkups[existing] = checkup;
+            } else {
+                appData.checkups.push(checkup);
+            }
+            saveData();
+            closeModal('checkupModal');
+            renderCheckup();
+            showToast('产检记录已保存', 'success');
+        }
+
+        // ========== 危险情况 ==========
+        function renderDanger() {
+            const html = dangerData.map((d, i) => `
+                <div class="danger-card" id="danger-${i}">
+                    <div class="danger-card-header" onclick="toggleDanger(${i})">
+                        <div class="danger-title">
+                            <span>⚠️</span> ${d.title}
+                            <span class="tag tag-${d.severity}">${d.severity === 'important' ? '紧急' : '需关注'}</span>
+                        </div>
+                        <span class="toggle">▼</span>
+                    </div>
+                    <div class="danger-card-body">
+                        <div class="section-label">📋 症状表现</div>
+                        <p>${d.symptoms}</p>
+                        <div class="section-label">🔍 可能原因</div>
+                        <p>${d.causes}</p>
+                        <div class="section-label">✅ 处理方案</div>
+                        <ol style="padding-left:20px;font-size:14px;line-height:1.8;">
+                            ${d.action.map(a => `<li>${a}</li>`).join('')}
+                        </ol>
+                    </div>
+                </div>
+            `).join('');
+            document.getElementById('dangerList').innerHTML = html;
+
+            // 添加紧急提示
+            const emergencyTip = document.createElement('div');
+            emergencyTip.style.cssText = 'background:linear-gradient(135deg,#ffcdd2,#ef9a9a);padding:16px;border-radius:12px;margin-bottom:16px;text-align:center;';
+            emergencyTip.innerHTML = '<p style="color:#b71c1c;font-weight:600;">🚨 如遇紧急情况请立即拨打120或前往最近医院急诊</p>';
+            document.getElementById('dangerList').insertBefore(emergencyTip, document.getElementById('dangerList').firstChild);
+        }
+
+        function toggleDanger(i) {
+            document.getElementById('danger-' + i).classList.toggle('expanded');
+        }
+
+        // ========== 分娩准备 ==========
+        function renderDelivery() {
+            // 分娩注意事项
+            document.getElementById('deliveryTips').innerHTML = deliveryTipsData.map(t =>
+                `<div class="delivery-tip">
+                    <div class="tip-icon">${t.icon}</div>
+                    <div class="tip-content"><strong>${t.title}</strong><br>${t.content}</div>
+                </div>`
+            ).join('');
+
+            // 待产包清单
+            if (!appData.deliveryBag) appData.deliveryBag = {};
+            let totalItems = 0;
+            let checkedItems = 0;
+            let bagHtml = '';
+            for (const [category, items] of Object.entries(deliveryBagList)) {
+                bagHtml += `<div class="checklist-category">
+                    <div class="checklist-category-title">📦 ${category}</div>`;
+                items.forEach((item, i) => {
+                    const key = `${category}_${i}`;
+                    const checked = appData.deliveryBag[key] || false;
+                    if (checked) checkedItems++;
+                    totalItems++;
+                    bagHtml += `
+                        <div class="checklist-item ${checked ? 'checked' : ''}" onclick="toggleBagItem('${key}')">
+                            <input type="checkbox" ${checked ? 'checked' : ''}>
+                            <label>${item.name}</label>
+                            ${item.note ? `<span class="item-note">${item.note}</span>` : ''}
+                        </div>`;
+                });
+                bagHtml += '</div>';
+            }
+            document.getElementById('deliveryBag').innerHTML = bagHtml;
+            document.getElementById('bagProgress').textContent = `已准备 ${checkedItems}/${totalItems} 件`;
+
+            // 临产征兆
+            document.getElementById('laborSigns').innerHTML = laborSignsData.map(s => `
+                <div class="delivery-tip" style="border-left-color:${s.urgency === 'important' ? '#f44336' : s.urgency === 'attention' ? '#ff9800' : '#4caf50'};">
+                    <div class="tip-icon">${s.urgency === 'important' ? '🚨' : s.urgency === 'attention' ? '⏰' : '📝'}</div>
+                    <div class="tip-content">
+                        <strong>${s.title}</strong><br>
+                        ${s.desc}<br>
+                        <span style="color:var(--primary);">👉 ${s.action}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function toggleBagItem(key) {
+            appData.deliveryBag[key] = !appData.deliveryBag[key];
+            saveData();
+            renderDelivery();
+        }
+
+        // ========== 胎动记录 ==========
+        function renderKick() {
+            document.getElementById('kickCount').textContent = appData.currentKickCount || 0;
+            if (appData.kickStartTime) {
+                document.getElementById('kickStartTime').textContent = '开始时间：' + new Date(appData.kickStartTime).toLocaleTimeString('zh-CN');
+            } else {
+                document.getElementById('kickStartTime').textContent = '尚未开始';
+            }
+
+            const history = document.getElementById('kickHistory');
+            if (!appData.kickSessions || appData.kickSessions.length === 0) {
+                history.innerHTML = `<div class="empty-state"><div class="emoji">📊</div><p>暂无胎动记录</p></div>`;
+            } else {
+                history.innerHTML = appData.kickSessions.slice().reverse().map(s => {
+                    const status = s.count >= 10 ? 'tag-normal' : 'tag-important';
+                    const statusText = s.count >= 10 ? '正常' : '偏少，需关注';
+                    return `
+                        <div class="record-item">
+                            <div class="record-header">
+                                <div class="record-title">${s.date} ${s.time}</div>
+                                <span class="tag ${status}">${statusText}</span>
+                            </div>
+                            <div class="record-content"><strong>胎动次数：</strong>${s.count} 次（1小时内）</div>
+                            ${s.note ? `<div class="record-content">${s.note}</div>` : ''}
+                        </div>
+                    `;
+                }).join('');
+            }
+        }
+
+        function recordKick() {
+            if (!appData.kickStartTime) {
+                appData.kickStartTime = Date.now();
+            }
+            appData.currentKickCount = (appData.currentKickCount || 0) + 1;
+            document.getElementById('kickCount').textContent = appData.currentKickCount;
+            document.getElementById('kickStartTime').textContent = '开始时间：' + new Date(appData.kickStartTime).toLocaleTimeString('zh-CN');
+            saveData();
+
+            // 震动反馈
+            const btn = event.target;
+            btn.style.transform = 'scale(0.9)';
+            setTimeout(() => btn.style.transform = '', 150);
+        }
+
+        function resetKick() {
+            appData.currentKickCount = 0;
+            appData.kickStartTime = null;
+            saveData();
+            renderKick();
+            showToast('计数已重置', 'success');
+        }
+
+        function saveKickSession() {
+            if (appData.currentKickCount === 0) {
+                showToast('请先记录胎动', 'error');
+                return;
+            }
+            const now = new Date();
+            const session = {
+                date: now.toLocaleDateString('zh-CN'),
+                time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
+                count: appData.currentKickCount,
+                duration: appData.kickStartTime ? Math.round((Date.now() - appData.kickStartTime) / 60000) : 0,
+                note: appData.currentKickCount >= 10 ? '胎动正常' : '胎动偏少，建议继续观察或咨询医生'
+            };
+            if (!appData.kickSessions) appData.kickSessions = [];
+            appData.kickSessions.push(session);
+            appData.currentKickCount = 0;
+            appData.kickStartTime = null;
+            saveData();
+            renderKick();
+            showToast('胎动记录已保存', 'success');
+        }
+
+        // ========== 体重管理 ==========
+        function renderWeight() {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            const weights = appData.weights || [];
+
+            if (weights.length === 0) {
+                ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height);
+                ctx.font = '14px sans-serif';
+                ctx.fillStyle = '#999';
+                ctx.textAlign = 'center';
+                ctx.fillText('暂无体重记录，点击右上角开始记录', ctx.canvas.width / 2, ctx.canvas.height / 2);
+            } else {
+                drawWeightChart(ctx, weights);
+            }
+
+            // 统计信息
+            const stats = document.getElementById('weightStats');
+            if (weights.length === 0) {
+                stats.innerHTML = '';
+                return;
+            }
+            const latest = weights[weights.length - 1];
+            const first = weights[0];
+            const gain = (latest.weight - first.weight).toFixed(1);
+            const weekInfo = calculateWeek();
+            const week = weekInfo ? weekInfo.weeks : 0;
+
+            let recommendedGain = '—';
+            let bmiCategory = '—';
+            if (appData.preWeight && appData.height) {
+                const bmi = appData.preWeight / Math.pow(appData.height / 100, 2);
+                if (bmi < 18.5) { recommendedGain = '12.5-18kg'; bmiCategory = '偏瘦'; }
+                else if (bmi < 24) { recommendedGain = '11.5-16kg'; bmiCategory = '正常'; }
+                else if (bmi < 28) { recommendedGain = '7-11.5kg'; bmiCategory = '超重'; }
+                else { recommendedGain = '5-9kg'; bmiCategory = '肥胖'; }
+            }
+
+            stats.innerHTML = `
+                <div class="info-box" style="flex:1;min-width:120px;">
+                    <div class="label">当前体重</div>
+                    <div class="value" style="font-size:22px;">${latest.weight}<span class="unit">kg</span></div>
+                </div>
+                <div class="info-box" style="flex:1;min-width:120px;">
+                    <div class="label">已增重</div>
+                    <div class="value" style="font-size:22px;color:${gain > 0 ? 'var(--primary)' : 'var(--success)'};">${gain}<span class="unit">kg</span></div>
+                </div>
+                <div class="info-box" style="flex:1;min-width:120px;">
+                    <div class="label">BMI类型</div>
+                    <div class="value" style="font-size:20px;">${bmiCategory}</div>
+                </div>
+                <div class="info-box" style="flex:1;min-width:120px;">
+                    <div class="label">建议总增重</div>
+                    <div class="value" style="font-size:20px;">${recommendedGain}</div>
+                </div>
+            `;
+
+            // 体重参考指南
+            const guideHtml = `
+                <table style="width:100%;border-collapse:collapse;font-size:14px;">
+                    <tr style="background:var(--secondary);">
+                        <th style="padding:10px;text-align:left;border-radius:8px 0 0 8px;">孕前BMI</th>
+                        <th style="padding:10px;text-align:center;">类型</th>
+                        <th style="padding:10px;text-align:center;">孕期总增重建议</th>
+                        <th style="padding:10px;text-align:center;border-radius:0 8px 8px 0;">中晚期每周增重</th>
+                    </tr>
+                    <tr><td style="padding:10px;">< 18.5</td><td style="padding:10px;text-align:center;">偏瘦</td><td style="padding:10px;text-align:center;">12.5-18kg</td><td style="padding:10px;text-align:center;">0.51-0.66kg</td></tr>
+                    <tr style="background:#fafafa;"><td style="padding:10px;">18.5-23.9</td><td style="padding:10px;text-align:center;">正常</td><td style="padding:10px;text-align:center;">11.5-16kg</td><td style="padding:10px;text-align:center;">0.42-0.50kg</td></tr>
+                    <tr><td style="padding:10px;">24-27.9</td><td style="padding:10px;text-align:center;">超重</td><td style="padding:10px;text-align:center;">7-11.5kg</td><td style="padding:10px;text-align:center;">0.28-0.33kg</td></tr>
+                    <tr style="background:#fafafa;"><td style="padding:10px;">≥ 28</td><td style="padding:10px;text-align:center;">肥胖</td><td style="padding:10px;text-align:center;">5-9kg</td><td style="padding:10px;text-align:center;">0.22-0.28kg</td></tr>
+                </table>
+                <p style="margin-top:12px;font-size:13px;color:var(--text-light);">💡 体重增长过快或过慢都需要关注，建议与医生沟通调整饮食和运动。</p>
+            `;
+            document.getElementById('weightGuide').innerHTML = guideHtml;
+        }
+
+        function drawWeightChart(ctx, weights) {
+            const canvas = ctx.canvas;
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = canvas.offsetWidth * dpr;
+            canvas.height = 250 * dpr;
+            ctx.scale(dpr, dpr);
+            const w = canvas.offsetWidth;
+            const h = 250;
+            const padding = { top: 20, right: 20, bottom: 40, left: 50 };
+            const chartW = w - padding.left - padding.right;
+            const chartH = h - padding.top - padding.bottom;
+
+            ctx.clearRect(0, 0, w, h);
+
+            const weightValues = weights.map(d => d.weight);
+            const minW = Math.min(...weightValues) - 2;
+            const maxW = Math.max(...weightValues) + 2;
+
+            // 网格线
+            ctx.strokeStyle = '#f0f0f0';
+            ctx.lineWidth = 1;
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = '#999';
+            for (let i = 0; i <= 5; i++) {
+                const y = padding.top + (chartH / 5) * i;
+                ctx.beginPath();
+                ctx.moveTo(padding.left, y);
+                ctx.lineTo(w - padding.right, y);
+                ctx.stroke();
+                const value = (maxW - (maxW - minW) * (i / 5)).toFixed(1);
+                ctx.textAlign = 'right';
+                ctx.fillText(value, padding.left - 5, y + 4);
+            }
+
+            // 画线
+            if (weights.length > 1) {
+                ctx.strokeStyle = '#e91e63';
+                ctx.lineWidth = 2.5;
+                ctx.beginPath();
+                weights.forEach((d, i) => {
+                    const x = padding.left + (chartW / (weights.length - 1)) * i;
+                    const y = padding.top + chartH - ((d.weight - minW) / (maxW - minW)) * chartH;
+                    if (i === 0) ctx.moveTo(x, y);
+                    else ctx.lineTo(x, y);
+                });
+                ctx.stroke();
+
+                // 填充
+                ctx.lineTo(padding.left + chartW, padding.top + chartH);
+                ctx.lineTo(padding.left, padding.top + chartH);
+                ctx.closePath();
+                ctx.fillStyle = 'rgba(233, 30, 99, 0.1)';
+                ctx.fill();
+            }
+
+            // 数据点
+            weights.forEach((d, i) => {
+                const x = padding.left + (weights.length > 1 ? (chartW / (weights.length - 1)) * i : chartW / 2);
+                const y = padding.top + chartH - ((d.weight - minW) / (maxW - minW)) * chartH;
+                ctx.beginPath();
+                ctx.arc(x, y, 4, 0, Math.PI * 2);
+                ctx.fillStyle = '#e91e63';
+                ctx.fill();
+                ctx.strokeStyle = 'white';
+                ctx.lineWidth = 2;
+                ctx.stroke();
+            });
+
+            // X轴标签
+            ctx.fillStyle = '#999';
+            ctx.textAlign = 'center';
+            const maxLabels = Math.min(weights.length, 6);
+            const step = Math.ceil(weights.length / maxLabels);
+            weights.forEach((d, i) => {
+                if (i % step === 0 || i === weights.length - 1) {
+                    const x = padding.left + (weights.length > 1 ? (chartW / (weights.length - 1)) * i : chartW / 2);
+                    ctx.fillText(d.date.slice(5), x, h - padding.bottom + 18);
+                }
+            });
+        }
+
+        function openWeightModal() {
+            document.getElementById('weightDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('weightValue').value = appData.currentWeight || '';
+            document.getElementById('weightModal').classList.add('active');
+        }
+
+        function saveWeight() {
+            const date = document.getElementById('weightDate').value;
+            const weight = parseFloat(document.getElementById('weightValue').value);
+            if (!date || !weight) {
+                showToast('请填写完整信息', 'error');
+                return;
+            }
+            if (!appData.weights) appData.weights = [];
+            const existing = appData.weights.findIndex(w => w.date === date);
+            if (existing >= 0) {
+                appData.weights[existing].weight = weight;
+            } else {
+                appData.weights.push({ date, weight });
+                appData.weights.sort((a, b) => a.date.localeCompare(b.date));
+            }
+            appData.currentWeight = weight;
+            saveData();
+            closeModal('weightModal');
+            renderWeight();
+            showToast('体重已记录', 'success');
+        }
+
+        // ========== 设置 ==========
+        function renderSettings() {
+            document.getElementById('lmpDate').value = appData.lmpDate || '';
+            document.getElementById('eddDate').value = appData.eddDate || (appData.lmpDate ? calculateEDD() : '');
+            document.getElementById('height').value = appData.height || '';
+            document.getElementById('preWeight').value = appData.preWeight || '';
+            document.getElementById('currentWeight').value = appData.currentWeight || '';
+
+            if (appData.height && appData.preWeight) {
+                renderBMI();
+            } else {
+                document.getElementById('bmiResult').innerHTML = '';
+            }
+        }
+
+        function renderBMI() {
+            const bmi = appData.preWeight / Math.pow(appData.height / 100, 2);
+            let category, color;
+            if (bmi < 18.5) { category = '偏瘦'; color = 'var(--warning)'; }
+            else if (bmi < 24) { category = '正常'; color = 'var(--success)'; }
+            else if (bmi < 28) { category = '超重'; color = 'var(--warning)'; }
+            else { category = '肥胖'; color = 'var(--danger)'; }
+
+            document.getElementById('bmiResult').innerHTML = `
+                <div style="display:flex;gap:20px;align-items:center;flex-wrap:wrap;">
+                    <div style="font-size:32px;font-weight:700;color:${color};">${bmi.toFixed(1)}</div>
+                    <div>
+                        <div style="font-size:14px;color:var(--text-light);">您的BMI</div>
+                        <div style="font-weight:600;color:${color};">${category}</div>
+                    </div>
+                </div>
+            `;
+        }
+
+        function saveSettings() {
+            appData.lmpDate = document.getElementById('lmpDate').value;
+            appData.eddDate = document.getElementById('eddDate').value || calculateEDD();
+            saveData();
+            renderOverview();
+            showToast('设置已保存', 'success');
+        }
+
+        function saveBodyInfo() {
+            appData.height = parseFloat(document.getElementById('height').value) || null;
+            appData.preWeight = parseFloat(document.getElementById('preWeight').value) || null;
+            appData.currentWeight = parseFloat(document.getElementById('currentWeight').value) || null;
+            saveData();
+            if (appData.height && appData.preWeight) {
+                renderBMI();
+            }
+            showToast('信息已保存', 'success');
+        }
+
+        // ========== 数据导入导出 ==========
+        function exportData() {
+            const dataStr = JSON.stringify(appData, null, 2);
+            const blob = new Blob([dataStr], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `孕期数据备份_${new Date().toISOString().split('T')[0]}.json`;
+            a.click();
+            URL.revokeObjectURL(url);
+            showToast('数据已导出', 'success');
+        }
+
+        function importData(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const imported = JSON.parse(e.target.result);
+                    appData = { ...appData, ...imported };
+                    saveData();
+                    renderSettings();
+                    renderOverview();
+                    showToast('数据导入成功', 'success');
+                } catch(err) {
+                    showToast('导入失败，文件格式错误', 'error');
+                }
+            };
+            reader.readAsText(file);
+            event.target.value = '';
+        }
+
+        function clearAllData() {
+            if (confirm('⚠️ 确定要清空所有数据吗？此操作不可恢复！\n\n建议先导出数据备份。')) {
+                if (confirm('再次确认：真的要清空所有数据吗？')) {
+                    localStorage.removeItem('pregnancyData');
+                    appData = {
+                        lmpDate: null, eddDate: null, height: null, preWeight: null,
+                        checkups: [], kickSessions: [], weights: [], deliveryBag: {},
+                        currentKickCount: 0, kickStartTime: null
+                    };
+                    renderSettings();
+                    renderOverview();
+                    showToast('所有数据已清空', 'success');
+                }
+            }
+        }
+
+        // ========== 工具函数 ==========
+        function closeModal(id) {
+            document.getElementById(id).classList.remove('active');
+        }
+
+        function viewImage(src) {
+            document.getElementById('viewerImg').src = src;
+            document.getElementById('imageViewer').classList.add('active');
+        }
+
+        function closeImageViewer() {
+            document.getElementById('imageViewer').classList.remove('active');
+        }
+
+        function showToast(msg, type) {
+            const toast = document.getElementById('toast');
+            toast.textContent = msg;
+            toast.className = 'toast show ' + (type || '');
+            setTimeout(() => toast.classList.remove('show'), 2500);
+        }
+
+        // 点击模态框外部关闭
+        document.querySelectorAll('.modal-overlay').forEach(modal => {
+            modal.addEventListener('click', (e) => {
+                if (e.target === modal) modal.classList.remove('active');
+            });
+        });
+
+        // ESC键关闭
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                document.querySelectorAll('.modal-overlay.active').forEach(m => m.classList.remove('active'));
+                closeImageViewer();
+            }
+        });
+
+        // ========== 启动 ==========
+        loadData();
+        renderOverview();
+        renderSettings();
+    </script>
+</body>
+</html>
