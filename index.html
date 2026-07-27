@@ -2463,7 +2463,10 @@ function initSync() {
                             <li><span class="bullet">📏</span> <strong>身长：</strong>${baby.length}</li>
                             <li><span class="bullet">⚖️</span> <strong>体重：</strong>约 ${baby.weight}</li>
                             <li><span class="bullet">🍎</span> <strong>大小：</strong>相当于一个${baby.size}</li>
-                            <li><span class="bullet">📝</span> <strong>发育情况：</strong>${baby.desc}</li>
+                            <li style="flex-direction:column;align-items:flex-start;gap:2px;">
+                                <div><span class="bullet">📝</span> <strong>发育情况</strong></div>
+                                <div style="margin-left:24px;font-size:13px;color:var(--text-light);line-height:1.5;">${baby.desc}</div>
+                            </li>
                             ${nextMilestone ? `
                                 <li style="flex-direction:column;align-items:flex-start;gap:2px;">
                                     <div><span class="bullet">➡️</span> <strong>下个里程碑（第${nextWeek}周）</strong></div>
