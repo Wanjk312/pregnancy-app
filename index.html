@@ -1516,9 +1516,10 @@ async function connectOrCreateSync() {
         };
         saveData(true);
 
-        // 首次同步：先推本地数据，再拉云端数据
+        // 首次同步：先拉云端数据合并到本地，再把合并后的本地数据推到云端
+        // 这样可以避免新设备空数据覆盖云端
+        const pulled = await pullFromCloud();
         await syncToCloud();
-        await pullFromCloud();
 
         renderSyncPanel();
         showToast(isNew ? '家庭创建成功' : '加入家庭成功', 'success');
@@ -1570,6 +1571,18 @@ async function syncToCloud() {
     if (!supabase || !appData.sync || !appData.sync.enabled || isSyncing) return;
     isSyncing = true;
     try {
+        // 推送前先拉取云端数据并合并到本地，防止用旧数据覆盖云端新数据
+        const { data: cloudRow, error: pullError } = await supabase
+            .from('pregnancy_data')
+            .select('*')
+            .eq('pair_code', appData.sync.pairCode)
+            .single();
+
+        if (!pullError && cloudRow && cloudRow.data) {
+            mergeCloudData(cloudRow.data);
+            appData.sync.familyId = cloudRow.family_id;
+        }
+
         const payload = {
             pair_code: appData.sync.pairCode,
             family_id: appData.sync.familyId,
@@ -1587,7 +1600,8 @@ async function syncToCloud() {
                 kickStartTime: appData.kickStartTime,
                 appTitle: appData.appTitle
             },
-            updated_by: appData.sync.nickname
+            updated_by: appData.sync.nickname,
+            updated_at: new Date().toISOString()
         };
 
         // upsert：如果不存在则插入，存在则更新
@@ -1600,6 +1614,13 @@ async function syncToCloud() {
         appData.sync.lastSyncAt = Date.now();
         localStorage.setItem('pregnancyData', JSON.stringify(appData));
         renderSyncPanel();
+        // 推送合并后可能有新数据，刷新界面
+        renderOverview();
+        renderBaby();
+        renderCheckup();
+        renderKick();
+        renderWeight();
+        renderDelivery();
         console.log('已同步到云端');
     } catch (err) {
         console.error('syncToCloud error', err);
@@ -1665,7 +1686,8 @@ async function pullFromCloud() {
 }
 
 function mergeCloudData(cloudData) {
-    // 标量字段：如果云端有值则覆盖
+    if (!cloudData) return;
+    // 标量字段：本地为空时取云端值，云端有值则覆盖本地（云端是最新推送的）
     if (cloudData.appTitle) appData.appTitle = cloudData.appTitle;
     if (cloudData.lmpDate) appData.lmpDate = cloudData.lmpDate;
     if (cloudData.eddDate) appData.eddDate = cloudData.eddDate;
@@ -1675,27 +1697,42 @@ function mergeCloudData(cloudData) {
     if (typeof cloudData.currentKickCount === 'number') appData.currentKickCount = cloudData.currentKickCount;
     if (cloudData.kickStartTime) appData.kickStartTime = cloudData.kickStartTime;
 
-    // 数组字段：按 id 去重合并
+    // 数组字段：按 key 合并，同 key 取较新更新的记录
     appData.checkups = mergeArrays(appData.checkups || [], cloudData.checkups || [], 'id');
     appData.kickSessions = mergeArrays(appData.kickSessions || [], cloudData.kickSessions || [], c => c.date + c.time);
     appData.weights = mergeArrays(appData.weights || [], cloudData.weights || [], 'date');
 
-    // 对象字段：合并 deliveryBag
+    // 对象字段：合并 deliveryBag（云端覆盖本地）
     if (cloudData.deliveryBag) {
         appData.deliveryBag = { ...(appData.deliveryBag || {}), ...cloudData.deliveryBag };
     }
+
+    // 更新顶部标题
+    const titleEl = document.getElementById('headerTitle');
+    if (titleEl && appData.appTitle) titleEl.textContent = appData.appTitle;
 }
 
 function mergeArrays(localArr, cloudArr, keyFn) {
     const getKey = typeof keyFn === 'function' ? keyFn : item => item[keyFn];
     const map = new Map();
+    // 先放本地
     for (const item of localArr) {
-        map.set(getKey(item), item);
+        if (item) map.set(getKey(item), item);
     }
+    // 云端数据覆盖：同 key 取 updatedAt 较新者，否则添加新记录
     for (const item of cloudArr) {
+        if (!item) continue;
         const key = getKey(item);
-        if (!map.has(key)) {
+        const existing = map.get(key);
+        if (!existing) {
             map.set(key, item);
+        } else {
+            // 比较 updatedAt 字段决定保留哪条
+            const localTs = existing.updatedAt || existing.updated_at || 0;
+            const cloudTs = item.updatedAt || item.updated_at || 0;
+            if (cloudTs >= localTs) {
+                map.set(key, item);
+            }
         }
     }
     return Array.from(map.values());
@@ -1703,9 +1740,9 @@ function mergeArrays(localArr, cloudArr, keyFn) {
 
 async function manualSync() {
     showSyncMessage('正在同步...', '');
+    // syncToCloud 内部已先拉取云端合并再推送，所以这里只需调用一次
     await syncToCloud();
-    const pulled = await pullFromCloud();
-    showSyncMessage(pulled ? '同步完成' : '已推送到云端', 'success');
+    showSyncMessage('同步完成', 'success');
 }
 
 function startAutoPull() {
@@ -2664,6 +2701,7 @@ function initSync() {
                 return;
             }
             const id = document.getElementById('checkupId').value || Date.now().toString();
+            const now = Date.now();
             const checkup = {
                 id,
                 date,
@@ -2672,13 +2710,17 @@ function initSync() {
                 items: document.getElementById('checkupItems').value,
                 result: document.getElementById('checkupResult').value,
                 notes: document.getElementById('checkupNotes').value,
-                images: [...pendingImages]
+                images: [...pendingImages],
+                updatedAt: now
             };
 
             const existing = appData.checkups.findIndex(c => c.id === id);
             if (existing >= 0) {
+                // 保留原创建时间
+                checkup.createdAt = appData.checkups[existing].createdAt || now;
                 appData.checkups[existing] = checkup;
             } else {
+                checkup.createdAt = now;
                 appData.checkups.push(checkup);
             }
             saveData();
@@ -2836,12 +2878,15 @@ function initSync() {
                 return;
             }
             const now = new Date();
+            const ts = Date.now();
             const session = {
                 date: now.toLocaleDateString('zh-CN'),
                 time: now.toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' }),
                 count: appData.currentKickCount,
                 duration: appData.kickStartTime ? Math.round((Date.now() - appData.kickStartTime) / 60000) : 0,
-                note: appData.currentKickCount >= 10 ? '胎动正常' : '胎动偏少，建议继续观察或咨询医生'
+                note: appData.currentKickCount >= 10 ? '胎动正常' : '胎动偏少，建议继续观察或咨询医生',
+                updatedAt: ts,
+                createdAt: ts
             };
             if (!appData.kickSessions) appData.kickSessions = [];
             appData.kickSessions.push(session);
@@ -3022,11 +3067,13 @@ function initSync() {
                 return;
             }
             if (!appData.weights) appData.weights = [];
+            const now = Date.now();
             const existing = appData.weights.findIndex(w => w.date === date);
             if (existing >= 0) {
                 appData.weights[existing].weight = weight;
+                appData.weights[existing].updatedAt = now;
             } else {
-                appData.weights.push({ date, weight });
+                appData.weights.push({ date, weight, updatedAt: now, createdAt: now });
                 appData.weights.sort((a, b) => a.date.localeCompare(b.date));
             }
             appData.currentWeight = weight;
