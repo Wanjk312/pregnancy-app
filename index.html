@@ -1588,7 +1588,7 @@ async function syncToCloud() {
             .single();
 
         if (!pullError && cloudRow && cloudRow.data) {
-            mergeCloudData(cloudRow.data);
+            mergeCloudData(cloudRow.data, 'prePush');
             appData.sync.familyId = cloudRow.family_id;
         }
 
@@ -1694,26 +1694,35 @@ async function pullFromCloud() {
     }
 }
 
-function mergeCloudData(cloudData) {
+function mergeCloudData(cloudData, mode) {
     if (!cloudData) return;
-    // 标量字段：本地为空时取云端值，云端有值则覆盖本地（云端是最新推送的）
-    if (cloudData.appTitle) appData.appTitle = cloudData.appTitle;
-    if (cloudData.lmpDate) appData.lmpDate = cloudData.lmpDate;
-    if (cloudData.eddDate) appData.eddDate = cloudData.eddDate;
-    if (cloudData.height) appData.height = cloudData.height;
-    if (cloudData.preWeight) appData.preWeight = cloudData.preWeight;
-    if (cloudData.currentWeight) appData.currentWeight = cloudData.currentWeight;
-    if (typeof cloudData.currentKickCount === 'number') appData.currentKickCount = cloudData.currentKickCount;
-    if (cloudData.kickStartTime) appData.kickStartTime = cloudData.kickStartTime;
+    // mode='pull': 被动拉取，云端值优先（其他设备的新修改）
+    // mode='prePush': 推送前合并，只补充本地为空的字段，不覆盖本地已有值（保护本地刚输入的数据）
+    const preferCloud = mode !== 'prePush';
+
+    // 标量字段
+    if (cloudData.appTitle && (preferCloud || !appData.appTitle)) appData.appTitle = cloudData.appTitle;
+    if (cloudData.lmpDate && (preferCloud || !appData.lmpDate)) appData.lmpDate = cloudData.lmpDate;
+    if (cloudData.eddDate && (preferCloud || !appData.eddDate)) appData.eddDate = cloudData.eddDate;
+    if (cloudData.height && (preferCloud || !appData.height)) appData.height = cloudData.height;
+    if (cloudData.preWeight && (preferCloud || !appData.preWeight)) appData.preWeight = cloudData.preWeight;
+    if (cloudData.currentWeight && (preferCloud || !appData.currentWeight)) appData.currentWeight = cloudData.currentWeight;
+    if (typeof cloudData.currentKickCount === 'number' && (preferCloud || typeof appData.currentKickCount !== 'number')) appData.currentKickCount = cloudData.currentKickCount;
+    if (cloudData.kickStartTime && (preferCloud || !appData.kickStartTime)) appData.kickStartTime = cloudData.kickStartTime;
 
     // 数组字段：按 key 合并，同 key 取较新更新的记录
     appData.checkups = mergeArrays(appData.checkups || [], cloudData.checkups || [], 'id');
     appData.kickSessions = mergeArrays(appData.kickSessions || [], cloudData.kickSessions || [], c => c.date + c.time);
     appData.weights = mergeArrays(appData.weights || [], cloudData.weights || [], 'date');
 
-    // 对象字段：合并 deliveryBag（云端覆盖本地）
+    // 对象字段：合并 deliveryBag
     if (cloudData.deliveryBag) {
-        appData.deliveryBag = { ...(appData.deliveryBag || {}), ...cloudData.deliveryBag };
+        if (preferCloud) {
+            appData.deliveryBag = { ...(appData.deliveryBag || {}), ...cloudData.deliveryBag };
+        } else {
+            // 推送前：只补充本地没有的 key
+            appData.deliveryBag = { ...cloudData.deliveryBag, ...(appData.deliveryBag || {}) };
+        }
     }
 
     // 更新顶部标题
