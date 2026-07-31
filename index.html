@@ -1327,7 +1327,7 @@
             <input type="hidden" id="checkupId">
             <div class="form-group">
                 <label>产检日期 *</label>
-                <input type="date" id="checkupDate">
+                <input type="date" id="checkupDate" onchange="autoFillCheckupWeek()">
             </div>
             <div class="form-group">
                 <label>孕周</label>
@@ -2330,6 +2330,19 @@ function initSync() {
             return { weeks, days, remainDays, totalDays: days };
         }
 
+        // 根据指定日期计算孕周（产检日期用）
+        function calculateWeekFromDate(dateStr) {
+            if (!appData.lmpDate || !dateStr) return null;
+            const lmp = new Date(appData.lmpDate);
+            const target = new Date(dateStr);
+            const diff = target - lmp;
+            const days = Math.floor(diff / (1000 * 60 * 60 * 24));
+            if (days < 0) return { weeks: 0, days: 0, remainDays: 0, totalDays: days, negative: true };
+            const weeks = Math.floor(days / 7);
+            const remainDays = days % 7;
+            return { weeks, days, remainDays, totalDays: days };
+        }
+
         function calculateEDD() {
             if (!appData.lmpDate) return null;
             const lmp = new Date(appData.lmpDate);
@@ -2651,6 +2664,25 @@ function initSync() {
 
         function editCheckup(id) {
             openCheckupModal(id);
+        }
+
+        // 产检日期变更时，根据 LMP 自动计算孕周
+        function autoFillCheckupWeek() {
+            const dateStr = document.getElementById('checkupDate').value;
+            const weekInput = document.getElementById('checkupWeek');
+            if (!dateStr) return;
+            if (!appData.lmpDate) {
+                showToast('请先在"设置"中填写末次月经日期', 'error');
+                return;
+            }
+            const weekInfo = calculateWeekFromDate(dateStr);
+            if (!weekInfo) return;
+            if (weekInfo.negative) {
+                weekInput.value = '';
+                showToast('产检日期早于末次月经日期，请检查', 'error');
+                return;
+            }
+            weekInput.value = `${weekInfo.weeks}周+${weekInfo.remainDays}天`;
         }
 
         function deleteCheckup(id) {
